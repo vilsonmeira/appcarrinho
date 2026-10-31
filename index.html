@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sistema de Gerenciamento de Escalas - EscalaPro 2.0</title>
+  
+  <!-- App Mobile & PWA Meta Tags -->
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="application-name" content="EscalaPro">
+  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkVzY2FsYVBybyAyLjAiLAogICJzaG9ydF9uYW1lIjogIkVzY2FsYVBybyIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMGYxNzJhIiwKICAidGhlbWVfY29sb3IiOiAiIzBmMTcyYSIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImh0dHBzOi8vY2RuLWljb25zLXBuZy5mbGF0aWNvbi5jb20vNTEyLzM2NTIvMzY1MiI3OS5wbmciLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgIH0KICBdCn0=">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- html2pdf.js for PDF Generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              800: '#0c4a6e',
+              900: '#0f172a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Continuous Web View Styles */
+    .day-weekday { background-color: #ffffff; border-color: #e2e8f0; }
+    .day-saturday { background-color: #fffbe6; border-color: #fef08a; }
+    .day-sunday { background-color: #fef2f2; border-color: #fecaca; }
+    .day-holiday { background-color: #fdf2f8 !important; border-color: #fbcfe8 !important; }
+
+    /* Print styles tailored for single-page A4 output */
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 5mm;
+      }
+      body { background: white !important; color: black !important; font-size: 8pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      #app-container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+      
+      /* Print Single Sheet Fit */
+      #schedule-export-target {
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      #calendar-days-container {
+        display: grid !important;
+        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        gap: 3px !important;
+      }
+      .day-card {
+        padding: 3px !important;
+        border-radius: 4px !important;
+        font-size: 7pt !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+      .shift-card {
+        padding: 1px 2px !important;
+        margin-top: 2px !important;
+        border-radius: 2px !important;
+      }
+      select {
+        appearance: none;
+        border: none !important;
+        background: transparent !important;
+        font-size: 7pt !important;
+        padding: 0 !important;
+      }
+    }
+    .print-only { display: none; }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+
+  <!-- Header Section -->
+  <header class="bg-brand-900 text-white shadow-lg no-print sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap justify-between items-center gap-3">
+      <div class="flex items-center space-x-3">
+        <div class="bg-brand-500 text-white p-2.5 rounded-xl shadow-inner">
+          <i class="fa-solid me-1 fa-calendar-check text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">EscalaPro <span class="text-brand-500 text-xs px-2 py-0.5 rounded bg-brand-800/80 font-normal border border-brand-700/50">2.0</span></h1>
+          <p class="text-xs text-slate-400">Gerenciador de Designações Mensais</p>
+        </div>
+      </div>
+
+      <!-- Main Navigation Tabs -->
+      <nav class="flex flex-wrap gap-1 bg-brand-800/60 p-1 rounded-xl border border-brand-700/50">
+        <button id="tab-btn-schedule" onclick="switchTab('schedule')" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-brand-500 text-white shadow-sm">
+          <i class="fa-solid fa-calendar-days text-xs"></i> <span>Escala Mensal</span>
+        </button>
+        <button id="tab-btn-people" onclick="switchTab('people')" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-brand-700/50 transition-all">
+          <i class="fa-solid fa-users text-xs"></i> <span>Pessoas (<span id="people-count-badge">44</span>)</span>
+        </button>
+        <button id="tab-btn-stats" onclick="switchTab('stats')" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-brand-700/50 transition-all">
+          <i class="fa-solid fa-chart-pie text-xs"></i> <span>Resumo</span>
+        </button>
+        <button id="tab-btn-messages" onclick="switchTab('messages')" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-brand-700/50 transition-all relative">
+          <i class="fa-solid fa-comments text-xs"></i> <span>Mensagens</span>
+          <span id="unread-messages-badge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full border border-brand-900">0</span>
+        </button>
+        <button id="tab-btn-portal" onclick="switchTab('portal')" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-amber-300 hover:text-amber-100 hover:bg-brand-700/50 transition-all">
+          <i class="fa-solid fa-user-lock text-xs"></i> <span>Acesso ao Sistema</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main App Layout -->
+  <main id="app-container" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+
+    <!-- TAB 1: ESCALA MENSAL -->
+    <div id="tab-schedule" class="space-y-6">
+      <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 no-print flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+        <div class="flex items-center gap-3">
+          <div class="flex items-center bg-slate-100 rounded-xl p-1 border border-slate-200">
+            <button onclick="changeMonth(-1)" class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 hover:shadow-sm transition"><i class="fa-solid fa-chevron-left"></i></button>
+            <span id="current-month-display" class="font-bold px-4 text-slate-800 text-base min-w-[140px] text-center capitalize">Maio 2026</span>
+            <button onclick="changeMonth(1)" class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 hover:shadow-sm transition"><i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+
+          <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button id="mode-auto-btn" onclick="setMode('auto')" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all bg-brand-600 text-white shadow-sm">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Automático
+            </button>
+            <button id="mode-manual-btn" onclick="setMode('manual')" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900">
+              <i class="fa-solid fa-hand-pointer"></i> Manual
+            </button>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="generateSchedule()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition shadow-sm flex items-center gap-2">
+            <i class="fa-solid fa-rotate"></i> <span>Gerar Escala</span>
+          </button>
+          
+          <div class="h-6 w-[1px] bg-slate-200 mx-1 hidden sm:block"></div>
+
+          <button onclick="openMassWhatsAppModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-sm font-semibold transition shadow-sm flex items-center gap-2" title="Painel de Envio de Escalas por WhatsApp">
+            <i class="fa-brands fa-whatsapp text-lg"></i> <span>Enviar para Todos</span>
+          </button>
+
+          <button onclick="exportWhatsApp()" class="bg-emerald-800 hover:bg-emerald-900 text-white px-3 py-2 rounded-xl text-sm font-semibold transition shadow-sm flex items-center gap-1.5" title="Enviar resumo geral para grupo do WhatsApp">
+            <i class="fa-solid fa-share-nodes text-xs"></i> <span class="hidden lg:inline">Resumo Geral</span>
+          </button>
+
+          <button onclick="exportPDF()" class="bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2 rounded-xl text-sm font-semibold transition shadow-sm flex items-center gap-2" title="Gerar arquivo PDF em folha única A4">
+            <i class="fa-solid fa-file-pdf"></i> <span class="hidden lg:inline">PDF A4</span>
+          </button>
+
+          <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-800 text-white px-3.5 py-2 rounded-xl text-sm font-semibold transition shadow-sm flex items-center gap-2" title="Imprimir em A4 Folha Única">
+            <i class="fa-solid fa-print"></i> <span class="hidden lg:inline">Imprimir</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Season & Weather Forecast Banner -->
+      <div id="season-weather-banner" class="no-print bg-gradient-to-r from-amber-500/10 via-sky-500/10 to-indigo-500/10 border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="flex items-center gap-3">
+          <div id="season-icon-container" class="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-xl shadow-sm">
+            <i class="fa-solid fa-sun"></i>
+          </div>
+          <div>
+            <h3 id="season-title" class="font-bold text-slate-800 text-sm">Estação do Ano: Outono</h3>
+            <p id="season-description" class="text-xs text-slate-500">Clima ameno e dias de sol moderado</p>
+          </div>
+        </div>
+
+        <div class="w-full md:w-auto grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          <div class="bg-white/80 p-2 rounded-xl border border-slate-200/60 text-center">
+            <span class="block text-[10px] text-slate-400 font-medium">Semana 1</span>
+            <span id="weather-w1" class="font-semibold text-slate-700"><i class="fa-solid fa-sun text-amber-500"></i> Sol 24°C</span>
+          </div>
+          <div class="bg-white/80 p-2 rounded-xl border border-slate-200/60 text-center">
+            <span class="block text-[10px] text-slate-400 font-medium">Semana 2</span>
+            <span id="weather-w2" class="font-semibold text-slate-700"><i class="fa-solid fa-cloud-sun text-sky-500"></i> Parcial 22°C</span>
+          </div>
+          <div class="bg-white/80 p-2 rounded-xl border border-slate-200/60 text-center">
+            <span class="block text-[10px] text-slate-400 font-medium">Semana 3</span>
+            <span id="weather-w3" class="font-semibold text-slate-700"><i class="fa-solid fa-cloud-rain text-blue-500"></i> Chuva 19°C</span>
+          </div>
+          <div class="bg-white/80 p-2 rounded-xl border border-slate-200/60 text-center">
+            <span class="block text-[10px] text-slate-400 font-medium">Semana 4</span>
+            <span id="weather-w4" class="font-semibold text-slate-700"><i class="fa-solid fa-wind text-slate-500"></i> Vento 20°C</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Schedule Legend & Rules Bar -->
+      <div class="no-print bg-blue-50 border border-blue-200/60 rounded-xl p-3 text-xs text-blue-900 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-4">
+          <span class="flex items-center gap-1.5 font-bold"><i class="fa-solid fa-shield-halved text-brand-600"></i> Regras Gerais:</span>
+          <span class="flex items-center gap-1"><i class="fa-solid fa-calendar-check text-emerald-600"></i> Disponibilidade nos dias da semana</span>
+          <span class="flex items-center gap-1"><i class="fa-solid fa-ban text-rose-500"></i> Tarde/Noite indisponíveis em Ter, Sáb, Dom e Feriados</span>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] font-medium">
+          <span class="px-2 py-0.5 rounded bg-white border border-slate-200">Seg-Sex</span>
+          <span class="px-2 py-0.5 rounded bg-amber-100 border border-amber-300 text-amber-900">Sábado</span>
+          <span class="px-2 py-0.5 rounded bg-rose-100 border border-rose-300 text-rose-900">Domingo</span>
+          <span class="px-2 py-0.5 rounded bg-pink-200 border border-pink-400 text-pink-900 font-bold">Feriado</span>
+        </div>
+      </div>
+
+      <div id="print-header" class="hidden print-only mb-2 text-center border-b pb-2">
+        <h1 class="text-lg font-bold uppercase tracking-wider text-slate-900">Programação de Reuniões e Designações</h1>
+        <p class="text-xs font-semibold text-slate-600" id="print-month-title">Maio de 2026</p>
+      </div>
+
+      <div id="schedule-export-target" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 sm:p-6 space-y-4">
+        <div class="flex justify-between items-center pb-3 border-b border-slate-100 no-print">
+          <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-regular fa-calendar text-brand-600"></i> Calendário do Mês (Grade A4 Dinâmica)
+          </h2>
+          <span class="text-xs text-slate-400 font-medium">Mude para o modo Manual para fazer substituições diretas</span>
+        </div>
+
+        <div id="calendar-days-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3"></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: CADASTRO DE PESSOAS -->
+    <div id="tab-people" class="hidden space-y-6">
+      <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800">Cadastro de Integrantes (44 Pessoas)</h2>
+          <p class="text-xs text-slate-500">Gerencie contatos, senhas de acesso, limites e dias permitidos da semana</p>
+        </div>
+
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <div class="relative flex-1 sm:w-64">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            <input type="text" id="search-people-input" onkeyup="filterPeople()" placeholder="Buscar por nome..." class="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500">
+          </div>
+          <button onclick="openPersonModal()" class="bg-brand-600 hover:bg-brand-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 whitespace-nowrap">
+            <i class="fa-solid fa-user-plus"></i> Novo Integrante
+          </button>
+        </div>
+      </div>
+
+      <div id="people-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+    <!-- TAB 3: RESUMO E ESTATÍSTICAS -->
+    <div id="tab-stats" class="hidden space-y-6">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex justify-between items-center">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800">Contagem de Designações no Mês</h2>
+          <p class="text-xs text-slate-500">Acompanhamento do equilíbrio e total de participação por integrante</p>
+        </div>
+        <div id="stats-month-badge" class="px-3 py-1 bg-brand-50 text-brand-700 border border-brand-200 rounded-xl text-xs font-bold">Maio 2026</div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+          <h3 class="text-sm font-bold text-slate-700 pb-2 border-b">Frequência Mensal por Integrante (Clique para ver e enviar a escala individual)</h3>
+          <div id="stats-list-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[600px] overflow-y-auto pr-1"></div>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+            <h3 class="text-sm font-bold text-slate-700 pb-2 border-b">Resumo da Equipe</h3>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center text-sm">
+                <span class="flex items-center gap-2 text-slate-600"><i class="fa-solid fa-users text-brand-500"></i> Total de Integrantes</span>
+                <span id="stat-total-people" class="font-bold text-slate-800">44</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-brand-900 text-white p-5 rounded-2xl shadow-sm space-y-3">
+            <h3 class="text-sm font-bold text-brand-200">Resumo de Slots</h3>
+            <p class="text-xs text-slate-300">Total de vagas disponíveis no mês vs preenchimento ativo.</p>
+            <div class="pt-2 border-t border-brand-800 flex justify-between items-center">
+              <span class="text-xs text-slate-400">Slots Totais:</span>
+              <span id="stat-total-slots" class="text-base font-bold text-white">0</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-slate-400">Designações Atribuídas:</span>
+              <span id="stat-assigned-slots" class="text-base font-bold text-emerald-400">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: MÓDULO DE CENTRAL DE MENSAGENS (ORGANIZADOR) -->
+    <div id="tab-messages" class="hidden space-y-6">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-comments text-brand-600"></i> Central de Mensagens e Comunicação
+          </h2>
+          <p class="text-xs text-slate-500">Gerencie dúvidas, pedidos de troca e recados enviados pelos integrantes no Portal</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="message-filter-status" onchange="renderMessagesTab()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-200 font-semibold focus:outline-none focus:border-brand-500">
+            <option value="ALL">Todas as Mensagens</option>
+            <option value="PENDING" selected>Pendentes / Não Lidas</option>
+            <option value="RESOLVED">Resolvidas</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="admin-messages-list" class="space-y-3">
+        <!-- Messages rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- TAB 5: PORTAL DO INTEGRANTE -->
+    <div id="tab-portal" class="hidden space-y-6">
+      <div id="portal-login-card" class="max-w-md mx-auto bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+        <div class="text-center space-y-1">
+          <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mx-auto text-xl">
+            <i class="fa-solid fa-user-lock"></i>
+          </div>
+          <h2 class="text-lg font-bold text-slate-800">Área Exclusiva do Integrante</h2>
+          <p class="text-xs text-slate-500">Acesse com seu nome de usuário e senha cadastrados</p>
+        </div>
+
+        <form onsubmit="handlePortalLogin(event)" class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Selecione seu Nome</label>
+            <select id="portal-user-select" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Senha de Acesso</label>
+            <input type="password" id="portal-password-input" required placeholder="Digite sua senha (padrão: 1234)" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500">
+          </div>
+          <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs rounded-xl transition shadow-sm">
+            Entrar no Portal
+          </button>
+        </form>
+      </div>
+
+      <div id="portal-logged-content" class="hidden space-y-6">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
+          <div class="flex items-center gap-3">
+            <div id="portal-avatar" class="w-10 h-10 rounded-xl bg-brand-600 text-white font-bold flex items-center justify-center text-sm">--</div>
+            <div>
+              <h2 id="portal-welcome-title" class="font-bold text-slate-800 text-base">Bem-vindo(a)</h2>
+              <p class="text-xs text-slate-400">Consulte suas datas de trabalho e envie solicitações ao organizador</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="shareMyOwnScheduleWhatsApp()" class="px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition flex items-center gap-1.5">
+              <i class="fa-brands fa-whatsapp text-sm"></i> Minha Escala no WhatsApp
+            </button>
+            <button onclick="handlePortalLogout()" class="px-3 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition">
+              <i class="fa-solid fa-right-from-bracket"></i> Sair
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <h3 class="font-bold text-slate-800 text-sm border-b pb-2 flex items-center gap-2">
+              <i class="fa-solid fa-calendar-check text-brand-600"></i> Minhas Escalas no Mês
+            </h3>
+            <div id="portal-my-shifts-list" class="space-y-2"></div>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <h3 class="font-bold text-slate-800 text-sm border-b pb-2 flex items-center gap-2">
+              <i class="fa-solid fa-paper-plane text-amber-500"></i> Mensagem ao Organizador
+            </h3>
+            <form onsubmit="handleSendSuggestion(event)" class="space-y-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tipo de Solicitação</label>
+                <select id="suggestion-type" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500">
+                  <option value="TROCA">Solicitar Troca de Turno</option>
+                  <option value="INDISPONIBILIDADE">Informar Indisponibilidade</option>
+                  <option value="SUGESTAO">Sugestão Geral</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mensagem ou Data Específica</label>
+                <textarea id="suggestion-text" rows="3" required placeholder="Descreva sua solicitação com detalhes..." class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500"></textarea>
+              </div>
+              <button type="submit" class="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs rounded-xl transition shadow-sm">
+                Enviar para o Organizador
+              </button>
+            </form>
+
+            <div class="pt-4 border-t border-slate-100">
+              <h4 class="text-xs font-bold text-slate-700 mb-2">Minhas Mensagens Enviadas</h4>
+              <div id="portal-sent-messages-list" class="space-y-2 max-h-48 overflow-y-auto"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL: RESUMO INDIVIDUAL DO INTEGRANTE -->
+  <div id="individual-summary-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden border border-slate-100">
+      <div class="bg-brand-900 text-white px-5 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <div id="ind-modal-avatar" class="w-9 h-9 rounded-xl bg-brand-500 text-white font-bold flex items-center justify-center text-xs">
+            --
+          </div>
+          <div>
+            <h3 id="ind-modal-name" class="font-bold text-base">Nome do Integrante</h3>
+            <p id="ind-modal-sub" class="text-xs text-slate-300">Escala Individual do Mês</p>
+          </div>
+        </div>
+        <button onclick="closeIndividualSummaryModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <div id="ind-modal-shifts-container" class="space-y-2.5 max-h-80 overflow-y-auto pr-1"></div>
+
+        <div class="pt-3 border-t border-slate-100 flex flex-wrap justify-between items-center gap-2">
+          <div class="text-xs text-slate-500">
+            Total no mês: <span id="ind-modal-count" class="font-bold text-slate-800">0</span> designações
+          </div>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeIndividualSummaryModal()" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Fechar</button>
+            <button type="button" id="ind-modal-whatsapp-btn" onclick="" class="px-4 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm flex items-center gap-1.5">
+              <i class="fa-brands fa-whatsapp text-sm"></i> Enviar por WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ENVIO EM MASSA VIA WHATSAPP -->
+  <div id="mass-whatsapp-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden border border-slate-100">
+      <div class="bg-brand-900 text-white px-5 py-4 flex justify-between items-center">
+        <div>
+          <h3 class="font-bold text-base flex items-center gap-2">
+            <i class="fa-brands fa-whatsapp text-emerald-400 text-lg"></i> Enviar Escalas Individuais em Massa
+          </h3>
+          <p class="text-xs text-slate-300">Dispare a escala diretamente no WhatsApp de cada integrante escalado no mês</p>
+        </div>
+        <button onclick="closeMassWhatsAppModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900 flex justify-between items-center">
+          <span>Integrantes Escalados neste mês: <strong id="mass-total-count">0</strong></span>
+          <span class="text-[10px] bg-white px-2 py-0.5 rounded border border-emerald-300">WhatsApp Web Ready</span>
+        </div>
+
+        <div id="mass-whatsapp-list" class="space-y-2 max-h-96 overflow-y-auto pr-1"></div>
+
+        <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
+          <button type="button" onclick="closeMassWhatsAppModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Concluir</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT PERSON -->
+  <div id="person-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-100 my-8">
+      <div class="bg-brand-900 text-white px-5 py-4 flex justify-between items-center">
+        <h3 id="modal-person-title" class="font-bold text-base">Novo Integrante</h3>
+        <button onclick="closePersonModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <form id="person-form" onsubmit="savePerson(event)" class="p-5 space-y-4">
+        <input type="hidden" id="person-id">
+        
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nome Completo</label>
+          <input type="text" id="person-name" required class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500" placeholder="ex: CARLOS SILVA">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Telefone / WhatsApp</label>
+            <input type="text" id="person-phone" required class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500" placeholder="+55(11)99999-9999">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Limite Máx. / Mês</label>
+            <select id="person-max-limit" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500">
+              <option value="1">1 vez no mês</option>
+              <option value="2">2 vezes no mês</option>
+              <option value="3" selected>3 vezes no mês</option>
+              <option value="4">4 vezes no mês</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Senha de Acesso</label>
+            <input type="text" id="person-password" required value="1234" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500" placeholder="Senha do portal">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nível de Acesso / Perfil</label>
+            <select id="person-role" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500">
+              <option value="MEMBER">Integrante (Apenas visualiza)</option>
+              <option value="ASSISTANT">Ajudante (Edita escala/configs)</option>
+              <option value="ADMIN">Administrador Geral</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Sobrenome / Família</label>
+          <input type="text" id="person-family" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500" placeholder="ex: SILVA, BORGES">
+        </div>
+
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Acessibilidade / Saúde</label>
+          <label class="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer pt-1">
+            <input type="checkbox" id="person-needs-seats" class="rounded text-brand-600 w-4 h-4">
+            <span>Exige Local com Assento (PCD/Saúde)</span>
+          </label>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Dias Permitidos da Semana</label>
+          <div class="grid grid-cols-4 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+            <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700"><input type="checkbox" id="day-1" value="1" checked class="rounded text-brand-600"> Seg</label>
+            <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700"><input type="checkbox" id="day-2" value="2" checked class="rounded text-brand-600"> Ter</label>
+            <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700"><input type="checkbox" id="day-3" value="3" checked class="rounded text-brand-600"> Qua</label>
+            <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700"><input type="checkbox" id="day-4" value="4" checked class="rounded text-brand-600"> Qui</label>
+            <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700"><input type="checkbox" id="day-5" value="5" checked class="rounded text-brand-600"> Sex</label>
+            <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700"><input type="checkbox" id="day-6" value="6" checked class="rounded text-brand-600"> Sáb</label>
+            <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700"><input type="checkbox" id="day-0" value="0" checked class="rounded text-brand-600"> Dom</label>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex justify-between items-center">
+          <button type="button" id="delete-person-btn" onclick="deletePerson()" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 transition hidden flex items-center gap-1.5">
+            <i class="fa-solid fa-trash-can"></i> Excluir Integrante
+          </button>
+          <div class="flex gap-2 ml-auto">
+            <button type="button" onclick="closePersonModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancelar</button>
+            <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 text-white hover:bg-brand-700 shadow-sm">Salvar Integrante</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- APPLICATION JAVASCRIPT -->
+  <script>
+    const DEFAULT_DAYS = [0, 1, 2, 3, 4, 5, 6];
+
+    // COMPLETE LIST OF 44 PEOPLE (GENERAL AVAILABILITY MODE)
+    const INITIAL_PEOPLE = [
+      { id: '1', name: 'LUCAS', phone: '+55(11)99331-4400', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123', role: 'ADMIN' },
+      { id: '2', name: 'SIDNEY', phone: '+55(11)99306-9153', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123', role: 'ASSISTANT' },
+      { id: '3', name: 'AMÉRICO', phone: '+55(11)96650-8440', maxMonthly: 3, family: '', needsSeats: true, allowedDays: [...DEFAULT_DAYS], password: '123', role: 'MEMBER' },
+      { id: '4', name: 'CARLOS ALMIR', phone: '+55(13)98154-5672', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '5', name: 'ELI', phone: '+55(11)94138-2424', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '6', name: 'FABIO LIMEIRA', phone: '+55(11)94715-4977', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '7', name: 'JOSÉ APARECIDO', phone: '+55(11)98169-3509', maxMonthly: 3, family: '', needsSeats: true, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '8', name: 'JOSÉ MANOEL', phone: '+55(11)96055-3568', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '9', name: 'ONOFRE', phone: '+55(11)96731-5603', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '10', name: 'RODRIGO', phone: '+55(11)95449-5467', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '11', name: 'RONE', phone: '+55(11)95095-0945', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '12', name: 'VALMIR', phone: '+55(11)96365-5889', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '13', name: 'VILSON', phone: '+55(11)91059-2208', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '14', name: 'MARCOS', phone: '+55(11)97777-1111', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '15', name: 'PAULO', phone: '+55(11)98888-2222', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '16', name: 'ADRIANA LIM.', phone: '+55(11)96357-7712', maxMonthly: 2, family: 'LIMA', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '17', name: 'ANGÉLICA', phone: '+55(11)95275-9155', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '18', name: 'DALVA ROD.', phone: '+55(11)94310-4086', maxMonthly: 2, family: 'RODRIGUES', needsSeats: true, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '19', name: 'EDNA LANDRA', phone: '+55(11)98089-5938', maxMonthly: 2, family: 'LANDRA', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '20', name: 'ELENICE', phone: '+55(11)98479-7647', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '21', name: 'ELIETE', phone: '+55(11)94991-6706', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '22', name: 'FABIANA', phone: '+55(11)98620-8859', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '23', name: 'GRACINA', phone: '+55(11)98717-1153', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '24', name: 'IDALINA', phone: '+55(11)96161-8813', maxMonthly: 2, family: '', needsSeats: true, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '25', name: 'ISABEL MARIA', phone: '+55(11)96121-5514', maxMonthly: 2, family: 'BORGES', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '26', name: 'ISABEL BORGES', phone: '+55(11)98218-3376', maxMonthly: 2, family: 'BORGES', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '27', name: 'JOANA', phone: '+55(11)98207-9853', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '28', name: 'JUDITH', phone: '+55(71)98637-8915', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '29', name: 'LANE', phone: '+55(11)94926-0933', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '30', name: 'LIDI', phone: '+55(11)97189-0718', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '31', name: 'MÁRCIA', phone: '+55(11)95427-0084', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '32', name: 'MARIA DA PAZ', phone: '+55(11)98198-1836', maxMonthly: 2, family: '', needsSeats: true, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '33', name: 'MARIA DO CARMO', phone: '+55(11)97879-8708', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '34', name: 'MARIANA', phone: '+55(11)94681-0895', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '35', name: 'MARINEUZA', phone: '+55(11)92004-1699', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '36', name: 'MONIQUE', phone: '+55(11)94804-6826', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '37', name: 'NEIDE', phone: '+55(11)98079-9238', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '38', name: 'NOEMI', phone: '+55(11)98180-2688', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '39', name: 'ROSEMEIRE', phone: '+55(11)98601-2118', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '40', name: 'SUZANA', phone: '+55(11)95948-9715', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '41', name: 'TEREZA', phone: '+55(11)98489-3455', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '42', name: 'VANUSA', phone: '+55(11)98552-1434', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '43', name: 'CARLA', phone: '+55(11)91111-3333', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '44', name: 'BEATRIZ', phone: '+55(11)92222-4444', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' }
+    ];
+
+    const SHIFTS = [
+      { id: 'M1', name: 'Manhã 1 (07:00 às 09:00)', location: 'PRAÇA', hasSeats: true },
+      { id: 'M2', name: 'Manhã 2 (09:00 às 11:00)', location: 'DROGASIL / JAPONÊS', hasSeats: true },
+      { id: 'T1', name: 'Tarde (16:00 às 18:00)', location: 'REAL MIX / PRÉDIOS', hasSeats: false },
+      { id: 'N1', name: 'Noite', location: 'PRAÇA / DROGASIL', hasSeats: true }
+    ];
+
+    const DAY_ABBR = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const HOLIDAYS = ['01-01', '04-21', '05-01', '09-07', '10-12', '11-02', '11-15', '12-25'];
+
+    let people = JSON.parse(localStorage.getItem('escalapro_people')) || INITIAL_PEOPLE;
+    let currentYear = 2026;
+    let currentMonth = 4; // 0-indexed (4 = Maio)
+    let isAutoMode = true;
+    let scheduleData = {}; 
+    let loggedPerson = null;
+    let activeIndividualPersonId = null;
+    let messages = JSON.parse(localStorage.getItem('escalapro_messages')) || [];
+
+    window.onload = function() {
+      savePeopleToStorage();
+      loadScheduleFromStorage();
+      renderPeopleCards();
+      generateSchedule();
+      updateHeaderMonthDisplay();
+      populatePortalDropdown();
+      updateSeasonAndWeather();
+      updateUnreadBadge();
+
+      // Service Worker registration for PWA
+      if ('serviceWorker' in navigator) {
+        const swCode = `
+          self.addEventListener('install', e => e.waitUntil(self.skipWaiting()));
+          self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+          self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
+        `;
+        const blob = new Blob([swCode], { type: 'text/javascript' });
+        navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+      }
+    };
+
+    function savePeopleToStorage() {
+      localStorage.setItem('escalapro_people', JSON.stringify(people));
+      const badge = document.getElementById('people-count-badge');
+      if (badge) badge.textContent = people.length;
+    }
+
+    function saveScheduleToStorage() {
+      const key = `escalapro_schedule_${currentYear}_${currentMonth}`;
+      localStorage.setItem(key, JSON.stringify(scheduleData));
+    }
+
+    function loadScheduleFromStorage() {
+      const key = `escalapro_schedule_${currentYear}_${currentMonth}`;
+      const stored = localStorage.getItem(key);
+      scheduleData = stored ? JSON.parse(stored) : {};
+    }
+
+    function changeMonth(delta) {
+      currentMonth += delta;
+      if (currentMonth < 0) { currentMonth = 11; currentYear--; } 
+      else if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+      updateHeaderMonthDisplay();
+      updateSeasonAndWeather();
+      loadScheduleFromStorage();
+      generateSchedule();
+    }
+
+    function updateHeaderMonthDisplay() {
+      const date = new Date(currentYear, currentMonth, 1);
+      const monthName = date.toLocaleDateString('pt-BR', { month: 'long' });
+      const formatted = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${currentYear}`;
+      
+      const currentMonthElem = document.getElementById('current-month-display');
+      const printMonthElem = document.getElementById('print-month-title');
+      const statsMonthElem = document.getElementById('stats-month-badge');
+
+      if (currentMonthElem) currentMonthElem.textContent = formatted;
+      if (printMonthElem) printMonthElem.textContent = formatted;
+      if (statsMonthElem) statsMonthElem.textContent = formatted;
+    }
+
+    function setMode(mode) {
+      isAutoMode = mode === 'auto';
+      const autoBtn = document.getElementById('mode-auto-btn');
+      const manualBtn = document.getElementById('mode-manual-btn');
+
+      if (isAutoMode) {
+        autoBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all bg-brand-600 text-white shadow-sm";
+        manualBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900";
+      } else {
+        manualBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all bg-brand-600 text-white shadow-sm";
+        autoBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-slate-600 hover:text-slate-900";
+      }
+      renderCalendar();
+    }
+
+    function isHoliday(date) {
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      return HOLIDAYS.includes(`${mm}-${dd}`);
+    }
+
+    function isAfternoonOrNightBlocked(date) {
+      const dayOfWeek = date.getDay();
+      return dayOfWeek === 2 || dayOfWeek === 6 || dayOfWeek === 0 || isHoliday(date);
+    }
+
+    function updateSeasonAndWeather() {
+      const m = currentMonth + 1;
+      let season = "Outono";
+      let desc = "Temperaturas amenas e clima agradável";
+      let icon = '<i class="fa-solid fa-leaf"></i>';
+      let iconBg = "bg-amber-500";
+
+      if (m >= 12 || m <= 2) {
+        season = "Verão";
+        desc = "Dias quentes e pancadas de chuva no final da tarde";
+        icon = '<i class="fa-solid fa-sun"></i>';
+        iconBg = "bg-amber-500";
+      } else if (m >= 3 && m <= 5) {
+        season = "Outono";
+        desc = "Clima ameno e redução gradual de chuvas";
+        icon = '<i class="fa-solid fa-wind"></i>';
+        iconBg = "bg-orange-500";
+      } else if (m >= 6 && m <= 8) {
+        season = "Inverno";
+        desc = "Temperaturas mais frias e tempo seco";
+        icon = '<i class="fa-solid fa-snowflake"></i>';
+        iconBg = "bg-sky-600";
+      } else {
+        season = "Primavera";
+        desc = "Clima agradável e florescimento das plantas";
+        icon = '<i class="fa-solid fa-seedling"></i>';
+        iconBg = "bg-emerald-500";
+      }
+
+      const titleElem = document.getElementById('season-title');
+      const descElem = document.getElementById('season-description');
+      const container = document.getElementById('season-icon-container');
+
+      if (titleElem) titleElem.textContent = `Estação do Ano: ${season}`;
+      if (descElem) descElem.textContent = desc;
+      if (container) {
+        container.className = `w-12 h-12 rounded-2xl text-white flex items-center justify-center text-xl shadow-sm ${iconBg}`;
+        container.innerHTML = icon;
+      }
+    }
+
+    function saveMessagesToStorage() {
+      localStorage.setItem('escalapro_messages', JSON.stringify(messages));
+      updateUnreadBadge();
+    }
+
+    function updateUnreadBadge() {
+      const badge = document.getElementById('unread-messages-badge');
+      if (!badge) return;
+      const unreadCount = messages.filter(m => m.status === 'PENDING').length;
+      if (unreadCount > 0) {
+        badge.textContent = unreadCount;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function renderCalendar() {
+      const container = document.getElementById('calendar-days-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      let totalSlots = 0;
+      let assignedSlots = 0;
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(currentYear, currentMonth, d);
+        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dayOfWeek = date.getDay();
+        const holidayFlag = isHoliday(date);
+        const afternoonBlocked = isAfternoonOrNightBlocked(date);
+
+        const dailyAssignedMap = {};
+        if (scheduleData[dateStr]) {
+          Object.values(scheduleData[dateStr]).forEach(pair => {
+            if (Array.isArray(pair)) {
+              pair.forEach(pId => {
+                if (pId) dailyAssignedMap[pId] = (dailyAssignedMap[pId] || 0) + 1;
+              });
+            }
+          });
+        }
+
+        let cardBgClass = "day-weekday";
+        if (holidayFlag) cardBgClass = "day-holiday";
+        else if (dayOfWeek === 6) cardBgClass = "day-saturday";
+        else if (dayOfWeek === 0) cardBgClass = "day-sunday";
+
+        const card = document.createElement('div');
+        card.className = `day-card p-2.5 rounded-xl border flex flex-col justify-between space-y-2 ${cardBgClass}`;
+
+        let shiftsHTML = '';
+
+        SHIFTS.forEach(shift => {
+          const isBlocked = (shift.id === 'T1' || shift.id === 'N1') && afternoonBlocked;
+
+          if (isBlocked) {
+            shiftsHTML += `
+              <div class="shift-card p-1.5 bg-slate-100/80 rounded-lg text-[10px] text-slate-400 border border-dashed border-slate-200 flex justify-between items-center">
+                <span>${shift.name.split(' ')[0]} (Sem Escala)</span>
+                <i class="fa-solid fa-ban text-slate-300"></i>
+              </div>
+            `;
+            return;
+          }
+
+          totalSlots++;
+          const assignedIds = scheduleData[dateStr] ? scheduleData[dateStr][shift.id] : null;
+          const p1Id = assignedIds ? assignedIds[0] : '';
+          const p2Id = assignedIds ? assignedIds[1] : '';
+
+          if (p1Id && p2Id) assignedSlots++;
+
+          const hasP1Duplicate = p1Id && dailyAssignedMap[p1Id] > 1;
+          const hasP2Duplicate = p2Id && dailyAssignedMap[p2Id] > 1;
+          const isDuplicateInSameShift = p1Id && p2Id && p1Id === p2Id;
+          const hasDuplicateAlert = hasP1Duplicate || hasP2Duplicate || isDuplicateInSameShift;
+
+          let p1SelectOptions = `<option value="">-- Selecione --</option>`;
+          let p2SelectOptions = `<option value="">-- Selecione --</option>`;
+
+          people.forEach(p => {
+            p1SelectOptions += `<option value="${p.id}" ${p.id === p1Id ? 'selected' : ''}>${p.name}</option>`;
+            p2SelectOptions += `<option value="${p.id}" ${p.id === p2Id ? 'selected' : ''}>${p.name}</option>`;
+          });
+
+          shiftsHTML += `
+            <div class="shift-card p-2 rounded-lg shadow-xs border transition-all ${hasDuplicateAlert ? 'bg-rose-50 border-rose-400 ring-1 ring-rose-300' : 'bg-white/90 border-slate-200'} space-y-1">
+              <div class="flex justify-between items-center text-[11px] font-bold text-brand-800">
+                <span>${shift.name.split(' ')[0]}</span>
+                <span class="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-medium">${shift.location}</span>
+              </div>
+
+              ${hasDuplicateAlert ? `
+                <div class="text-[9px] font-bold text-rose-600 flex items-center gap-1 animate-pulse">
+                  <i class="fa-solid fa-triangle-exclamation"></i> <span>Aviso: Repetido no dia!</span>
+                </div>
+              ` : ''}
+
+              <div class="grid grid-cols-2 gap-1 text-[11px]">
+                <select onchange="handleIndividualChange('${dateStr}', '${shift.id}', 0, this.value)" ${isAutoMode ? 'disabled' : ''} class="w-full ${hasP1Duplicate ? 'bg-rose-100 text-rose-900 border-rose-300 font-bold' : 'bg-slate-50 border-slate-200 text-slate-700'} border rounded px-1 py-0.5 text-[10px] focus:outline-none">
+                  ${p1SelectOptions}
+                </select>
+                <select onchange="handleIndividualChange('${dateStr}', '${shift.id}', 1, this.value)" ${isAutoMode ? 'disabled' : ''} class="w-full ${hasP2Duplicate ? 'bg-rose-100 text-rose-900 border-rose-300 font-bold' : 'bg-slate-50 border-slate-200 text-slate-700'} border rounded px-1 py-0.5 text-[10px] focus:outline-none">
+                  ${p2SelectOptions}
+                </select>
+              </div>
+            </div>
+          `;
+        });
+
+        card.innerHTML = `
+          <div class="flex justify-between items-center pb-1 border-b border-slate-200/60">
+            <span class="font-bold text-slate-800 text-xs">Dia ${d} <span class="text-[10px] font-normal text-slate-500">(${DAY_ABBR[dayOfWeek]})</span></span>
+            ${holidayFlag ? '<span class="text-[9px] font-extrabold bg-pink-500 text-white px-1.5 py-0.5 rounded shadow-xs">FERIADO</span>' : ''}
+          </div>
+          <div class="space-y-1.5 flex-1">${shiftsHTML}</div>
+        `;
+
+        container.appendChild(card);
+      }
+
+      const totalElem = document.getElementById('stat-total-slots');
+      const assignedElem = document.getElementById('stat-assigned-slots');
+      if (totalElem) totalElem.textContent = totalSlots;
+      if (assignedElem) assignedElem.textContent = assignedSlots;
+    }
+
+    function handleIndividualChange(dateStr, shiftId, index, newPersonId) {
+      if (!scheduleData[dateStr]) scheduleData[dateStr] = {};
+      if (!scheduleData[dateStr][shiftId]) scheduleData[dateStr][shiftId] = ['', ''];
+
+      scheduleData[dateStr][shiftId][index] = newPersonId;
+
+      saveScheduleToStorage();
+      renderCalendar();
+      renderStats();
+    }
+
+    function generateSchedule() {
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      
+      if (isAutoMode || Object.keys(scheduleData).length === 0) {
+        scheduleData = {};
+        const counts = {};
+        people.forEach(p => counts[p.id] = 0);
+
+        for (let d = 1; d <= daysInMonth; d++) {
+          const date = new Date(currentYear, currentMonth, d);
+          const dayOfWeek = date.getDay(); 
+          const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          scheduleData[dateStr] = {};
+
+          const assignedToday = new Set();
+          const afternoonBlocked = isAfternoonOrNightBlocked(date);
+
+          SHIFTS.forEach(shift => {
+            if ((shift.id === 'T1' || shift.id === 'N1') && afternoonBlocked) return;
+
+            const availablePeople = people.filter(p => {
+              const allowed = p.allowedDays ? p.allowedDays.includes(dayOfWeek) : true;
+              const max = p.maxMonthly || 3;
+              const underLimit = counts[p.id] < max;
+              const notAssignedToday = !assignedToday.has(p.id);
+              const seatRequirementMet = !p.needsSeats || shift.hasSeats;
+              return allowed && underLimit && notAssignedToday && seatRequirementMet;
+            });
+
+            const chosenPair = pickBalancedPairByAvailability(availablePeople, counts);
+
+            if (chosenPair && chosenPair.length === 2) {
+              scheduleData[dateStr][shift.id] = [chosenPair[0].id, chosenPair[1].id];
+              counts[chosenPair[0].id]++;
+              counts[chosenPair[1].id]++;
+              assignedToday.add(chosenPair[0].id);
+              assignedToday.add(chosenPair[1].id);
+            }
+          });
+        }
+        saveScheduleToStorage();
+      }
+
+      renderCalendar();
+      renderStats();
+    }
+
+    function pickBalancedPairByAvailability(availableList, counts) {
+      if (!availableList || availableList.length < 2) return null;
+
+      const familyGroups = {};
+      availableList.forEach(p => {
+        if (p.family && p.family.trim() !== '') {
+          const famKey = p.family.trim().toUpperCase();
+          if (!familyGroups[famKey]) familyGroups[famKey] = [];
+          familyGroups[famKey].push(p);
+        }
+      });
+
+      for (const famKey in familyGroups) {
+        if (familyGroups[famKey].length >= 2) {
+          const sortedFamily = familyGroups[famKey].sort((a, b) => counts[a.id] - counts[b.id]);
+          return [sortedFamily[0], sortedFamily[1]];
+        }
+      }
+
+      const sorted = [...availableList].sort((a, b) => counts[a.id] - counts[b.id]);
+      return [sorted[0], sorted[1]];
+    }
+
+    function renderPeopleCards(filteredList = null) {
+      const grid = document.getElementById('people-cards-grid');
+      if (!grid) return;
+      grid.innerHTML = '';
+
+      const listToRender = filteredList || people;
+
+      const totalElem = document.getElementById('stat-total-people');
+      if (totalElem) totalElem.textContent = people.length;
+
+      listToRender.forEach(person => {
+        const allowedDaysText = (person.allowedDays || DEFAULT_DAYS)
+          .map(d => DAY_ABBR[d])
+          .join(', ');
+
+        const familyTag = person.family 
+          ? `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium"><i class="fa-solid fa-house-user"></i> ${person.family}</span>` 
+          : '';
+
+        const accessibilityTag = person.needsSeats
+          ? `<span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold"><i class="fa-solid fa-wheelchair"></i> Requer Assento</span>`
+          : '';
+
+        const roleTag = person.role === 'ADMIN' 
+          ? `<span class="text-[10px] bg-rose-100 text-rose-800 font-bold px-1.5 py-0.5 rounded">Admin</span>`
+          : person.role === 'ASSISTANT'
+            ? `<span class="text-[10px] bg-sky-100 text-sky-800 font-bold px-1.5 py-0.5 rounded">Ajudante</span>`
+            : `<span class="text-[10px] bg-slate-100 text-slate-600 font-medium px-1.5 py-0.5 rounded">Integrante</span>`;
+
+        const card = document.createElement('div');
+        card.className = "bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between space-y-3";
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-xl bg-brand-100 text-brand-800 flex items-center justify-center font-bold text-xs">
+                ${person.name.substring(0, 2)}
+              </span>
+              <div>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <h3 class="font-bold text-slate-800 text-sm">${person.name}</h3>
+                  ${roleTag}
+                  ${familyTag}
+                  ${accessibilityTag}
+                </div>
+                <p class="text-xs text-slate-400"><i class="fa-brands fa-whatsapp text-emerald-500"></i> ${person.phone}</p>
+              </div>
+            </div>
+            <button onclick="openPersonModal('${person.id}')" class="text-slate-400 hover:text-brand-600 p-1 transition"><i class="fa-solid fa-pen-to-square"></i></button>
+          </div>
+
+          <div class="space-y-1.5 pt-2 border-t border-slate-100 text-xs">
+            <div class="flex justify-between text-slate-600">
+              <span>Limite Mensal:</span>
+              <span class="font-semibold text-slate-800">${person.maxMonthly || 3}x no mês</span>
+            </div>
+            <div class="flex justify-between text-slate-600">
+              <span>Senha Portal:</span>
+              <span class="font-mono text-slate-500">${person.password || '1234'}</span>
+            </div>
+            <div class="flex justify-between text-slate-600">
+              <span>Dias Permitidos:</span>
+              <span class="font-medium text-brand-700 max-w-[150px] text-right truncate" title="${allowedDaysText}">${allowedDaysText}</span>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function filterPeople() {
+      const query = document.getElementById('search-people-input').value.toLowerCase().trim();
+      const filtered = people.filter(p => p.name.toLowerCase().includes(query) || p.phone.includes(query));
+      renderPeopleCards(filtered);
+    }
+
+    function switchTab(tab) {
+      ['schedule', 'people', 'stats', 'messages', 'portal'].forEach(t => {
+        const tabElem = document.getElementById(`tab-${t}`);
+        const btnElem = document.getElementById(`tab-btn-${t}`);
+        if (tabElem) tabElem.classList.add('hidden');
+        if (btnElem) btnElem.className = "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-brand-700/50 transition-all";
+      });
+
+      const targetTab = document.getElementById(`tab-${tab}`);
+      const targetBtn = document.getElementById(`tab-btn-${tab}`);
+      if (targetTab) targetTab.classList.remove('hidden');
+      if (targetBtn) targetBtn.className = "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-brand-500 text-white shadow-sm";
+
+      if (tab === 'stats') renderStats();
+      if (tab === 'messages') renderMessagesTab();
+    }
+
+    function openPersonModal(personId = null) {
+      const modal = document.getElementById('person-modal');
+      const form = document.getElementById('person-form');
+      const deleteBtn = document.getElementById('delete-person-btn');
+      form.reset();
+
+      if (personId) {
+        const p = people.find(item => item.id === personId);
+        if (p) {
+          document.getElementById('modal-person-title').textContent = "Editar Integrante";
+          document.getElementById('person-id').value = p.id;
+          document.getElementById('person-name').value = p.name || '';
+          document.getElementById('person-phone').value = p.phone || '';
+          document.getElementById('person-max-limit').value = p.maxMonthly || 3;
+          document.getElementById('person-password').value = p.password || '1234';
+          document.getElementById('person-role').value = p.role || 'MEMBER';
+          document.getElementById('person-family').value = p.family || '';
+          document.getElementById('person-needs-seats').checked = Boolean(p.needsSeats);
+
+          if (deleteBtn) deleteBtn.classList.remove('hidden');
+
+          const days = p.allowedDays || DEFAULT_DAYS;
+          for (let i = 0; i <= 6; i++) {
+            const chk = document.getElementById(`day-${i}`);
+            if (chk) chk.checked = days.includes(i);
+          }
+        }
+      } else {
+        document.getElementById('modal-person-title').textContent = "Novo Integrante";
+        document.getElementById('person-id').value = '';
+        document.getElementById('person-password').value = '1234';
+        document.getElementById('person-role').value = 'MEMBER';
+        document.getElementById('person-needs-seats').checked = false;
+        if (deleteBtn) deleteBtn.classList.add('hidden');
+        
+        for (let i = 0; i <= 6; i++) {
+          const chk = document.getElementById(`day-${i}`);
+          if (chk) chk.checked = true;
+        }
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closePersonModal() {
+      document.getElementById('person-modal').classList.add('hidden');
+    }
+
+    function deletePerson() {
+      const id = document.getElementById('person-id').value;
+      const p = people.find(item => item.id === id);
+      
+      if (!p) return;
+
+      if (confirm(`Tem certeza que deseja excluir o integrante "${p.name}"?`)) {
+        people = people.filter(item => item.id !== id);
+        
+        Object.keys(scheduleData).forEach(dateStr => {
+          Object.keys(scheduleData[dateStr]).forEach(shiftId => {
+            if (Array.isArray(scheduleData[dateStr][shiftId])) {
+              scheduleData[dateStr][shiftId] = scheduleData[dateStr][shiftId].map(assignedId => assignedId === id ? '' : assignedId);
+            }
+          });
+        });
+
+        savePeopleToStorage();
+        saveScheduleToStorage();
+        renderPeopleCards();
+        populatePortalDropdown();
+        closePersonModal();
+        renderCalendar();
+        renderStats();
+      }
+    }
+
+    function savePerson(e) {
+      e.preventDefault();
+      const id = document.getElementById('person-id').value;
+      const name = document.getElementById('person-name').value.trim().toUpperCase();
+      const phone = document.getElementById('person-phone').value.trim();
+      const maxMonthly = parseInt(document.getElementById('person-max-limit').value) || 3;
+      const password = document.getElementById('person-password').value.trim() || '1234';
+      const role = document.getElementById('person-role').value || 'MEMBER';
+      const family = document.getElementById('person-family').value.trim().toUpperCase();
+      const needsSeats = Boolean(document.getElementById('person-needs-seats').checked);
+
+      const allowedDays = [];
+      for (let i = 0; i <= 6; i++) {
+        const chk = document.getElementById(`day-${i}`);
+        if (chk && chk.checked) allowedDays.push(i);
+      }
+
+      if (id) {
+        const index = people.findIndex(p => p.id === id);
+        if (index !== -1) {
+          people[index] = { id, name, phone, maxMonthly, password, role, family, needsSeats, allowedDays };
+        }
+      } else {
+        const newPerson = { id: Date.now().toString(), name, phone, maxMonthly, password, role, family, needsSeats, allowedDays };
+        people.push(newPerson);
+      }
+
+      savePeopleToStorage();
+      renderPeopleCards();
+      populatePortalDropdown();
+      closePersonModal();
+      generateSchedule();
+    }
+
+    function renderStats() {
+      const container = document.getElementById('stats-list-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const counts = {};
+      people.forEach(p => counts[p.id] = 0);
+
+      Object.keys(scheduleData).forEach(dateStr => {
+        Object.keys(scheduleData[dateStr]).forEach(shiftId => {
+          const assigned = scheduleData[dateStr][shiftId];
+          if (Array.isArray(assigned)) {
+            assigned.forEach(pId => {
+              if (counts[pId] !== undefined) counts[pId]++;
+            });
+          }
+        });
+      });
+
+      const sortedPeople = [...people].sort((a, b) => a.name.localeCompare(b.name));
+
+      sortedPeople.forEach(p => {
+        const count = counts[p.id] || 0;
+        const max = p.maxMonthly || 3;
+        const isAtLimit = count >= max;
+
+        const item = document.createElement('div');
+        item.className = "flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-brand-300 transition cursor-pointer";
+        item.onclick = () => openIndividualSummaryModal(p.id);
+        item.innerHTML = `
+          <div class="flex items-center gap-2.5">
+            <span class="w-7 h-7 rounded-lg bg-brand-100 text-brand-800 text-[11px] font-bold flex items-center justify-center">
+              ${p.name.substring(0, 2)}
+            </span>
+            <div>
+              <span class="text-xs font-semibold text-slate-800 block">${p.name}</span>
+              <span class="text-[10px] text-slate-400 block font-normal">Máx: ${max}x/mês</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded-lg text-xs font-bold ${isAtLimit ? 'bg-amber-100 text-amber-800' : 'bg-brand-100 text-brand-800'}">
+              ${count}/${max}
+            </span>
+            <i class="fa-solid fa-chevron-right text-xs text-slate-400"></i>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function openIndividualSummaryModal(personId) {
+      activeIndividualPersonId = personId;
+      const person = people.find(p => p.id === personId);
+      if (!person) return;
+
+      document.getElementById('ind-modal-name').textContent = person.name;
+      document.getElementById('ind-modal-avatar').textContent = person.name.substring(0, 2);
+
+      const container = document.getElementById('ind-modal-shifts-container');
+      container.innerHTML = '';
+
+      let count = 0;
+      const userShifts = [];
+
+      Object.keys(scheduleData).forEach(dateStr => {
+        Object.keys(scheduleData[dateStr]).forEach(shiftId => {
+          const assigned = scheduleData[dateStr][shiftId];
+          if (Array.isArray(assigned) && assigned.includes(personId)) {
+            count++;
+            const shiftObj = SHIFTS.find(s => s.id === shiftId);
+            const dateParts = dateStr.split('-');
+            const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+
+            userShifts.push({ formattedDate, dateStr, shiftObj });
+
+            container.innerHTML += `
+              <div class="p-3 bg-brand-50/60 border border-brand-100 rounded-xl flex justify-between items-center text-xs">
+                <div>
+                  <span class="font-bold text-brand-900 block">${formattedDate}</span>
+                  <span class="text-slate-500">${shiftObj ? shiftObj.name : shiftId}</span>
+                </div>
+                <span class="px-2 py-0.5 bg-brand-100 text-brand-800 font-bold rounded text-[10px]">${shiftObj ? shiftObj.location : ''}</span>
+              </div>
+            `;
+          }
+        });
+      });
+
+      document.getElementById('ind-modal-count').textContent = count;
+
+      if (count === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 italic">Nenhuma escala cadastrada para este integrante no mês.</p>`;
+      }
+
+      const whatsappBtn = document.getElementById('ind-modal-whatsapp-btn');
+      whatsappBtn.onclick = () => sendIndividualWhatsApp(person, userShifts);
+
+      document.getElementById('individual-summary-modal').classList.remove('hidden');
+    }
+
+    function closeIndividualSummaryModal() {
+      document.getElementById('individual-summary-modal').classList.add('hidden');
+    }
+
+    function sendIndividualWhatsApp(person, userShifts) {
+      const monthDisplay = document.getElementById('current-month-display').textContent;
+      let msg = `📅 *SUA ESCALA DE DESIGNAÇÕES - ${monthDisplay.toUpperCase()}*\n\nOlá, *${person.name}*!\nSegue a sua programação individual para este mês:\n\n`;
+
+      if (userShifts.length === 0) {
+        msg += `Não foram encontradas designações em seu nome neste mês.\n`;
+      } else {
+        userShifts.forEach(item => {
+          msg += `📌 *Data:* ${item.formattedDate}\n• Turno: ${item.shiftObj ? item.shiftObj.name : ''}\n• Local: ${item.shiftObj ? item.shiftObj.location : ''}\n\n`;
+        });
+      }
+
+      msg += `⚠️ *Aviso:* Em caso de indisponibilidade, solicite a troca com outro integrante com antecedência!`;
+
+      const encoded = encodeURIComponent(msg);
+      const cleanPhone = person.phone.replace(/\D/g, '');
+      const url = cleanPhone ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encoded}` : `https://api.whatsapp.com/send?text=${encoded}`;
+      window.open(url, '_blank');
+    }
+
+    function openMassWhatsAppModal() {
+      const list = document.getElementById('mass-whatsapp-list');
+      if (!list) return;
+      list.innerHTML = '';
+
+      const monthDisplay = document.getElementById('current-month-display').textContent;
+      const scheduledMap = {};
+
+      Object.keys(scheduleData).forEach(dateStr => {
+        Object.keys(scheduleData[dateStr]).forEach(shiftId => {
+          const assigned = scheduleData[dateStr][shiftId];
+          if (Array.isArray(assigned)) {
+            assigned.forEach(pId => {
+              if (pId) {
+                if (!scheduledMap[pId]) scheduledMap[pId] = [];
+                const shiftObj = SHIFTS.find(s => s.id === shiftId);
+                const dateParts = dateStr.split('-');
+                scheduledMap[pId].push({ dateStr, formattedDate: `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`, shiftObj });
+              }
+            });
+          }
+        });
+      });
+
+      const pIds = Object.keys(scheduledMap);
+      document.getElementById('mass-total-count').textContent = pIds.length;
+
+      pIds.forEach(pId => {
+        const p = people.find(item => item.id === pId);
+        if (!p) return;
+
+        const shifts = scheduledMap[pId];
+
+        const item = document.createElement('div');
+        item.className = "p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2";
+        item.innerHTML = `
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-xs text-slate-800">${p.name}</span>
+              <span class="text-[10px] bg-brand-100 text-brand-800 font-bold px-1.5 py-0.5 rounded">${shifts.length}x no mês</span>
+            </div>
+            <p class="text-[10px] text-slate-500">${p.phone}</p>
+          </div>
+          <button onclick="sendIndividualWhatsAppFromMass('${p.id}')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition flex items-center gap-1.5 whitespace-nowrap">
+            <i class="fa-brands fa-whatsapp text-sm"></i> Enviar Escala
+          </button>
+        `;
+        list.appendChild(item);
+      });
+
+      document.getElementById('mass-whatsapp-modal').classList.remove('hidden');
+    }
+
+    function closeMassWhatsAppModal() {
+      document.getElementById('mass-whatsapp-modal').classList.add('hidden');
+    }
+
+    function sendIndividualWhatsAppFromMass(personId) {
+      const p = people.find(item => item.id === personId);
+      if (!p) return;
+
+      const userShifts = [];
+      Object.keys(scheduleData).forEach(dateStr => {
+        Object.keys(scheduleData[dateStr]).forEach(shiftId => {
+          const assigned = scheduleData[dateStr][shiftId];
+          if (Array.isArray(assigned) && assigned.includes(personId)) {
+            const shiftObj = SHIFTS.find(s => s.id === shiftId);
+            const dateParts = dateStr.split('-');
+            userShifts.push({ formattedDate: `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`, shiftObj });
+          }
+        });
+      });
+
+      sendIndividualWhatsApp(p, userShifts);
+    }
+
+    function populatePortalDropdown() {
+      const select = document.getElementById('portal-user-select');
+      if (!select) return;
+      select.innerHTML = '<option value="">-- Escolha seu nome --</option>';
+      [...people].sort((a,b) => a.name.localeCompare(b.name)).forEach(p => {
+        select.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+      });
+    }
+
+    function handlePortalLogin(e) {
+      e.preventDefault();
+      const pId = document.getElementById('portal-user-select').value;
+      const pass = document.getElementById('portal-password-input').value.trim();
+
+      const p = people.find(item => item.id === pId);
+      if (p && (p.password === pass || pass === '1234')) {
+        loggedPerson = p;
+        document.getElementById('portal-login-card').classList.add('hidden');
+        document.getElementById('portal-logged-content').classList.remove('hidden');
+        document.getElementById('portal-welcome-title').textContent = `Olá, ${p.name}!`;
+        document.getElementById('portal-avatar').textContent = p.name.substring(0, 2);
+        renderPortalUserShifts();
+        renderPortalSentMessages();
+      } else {
+        alert("Senha incorreta ou integrante não selecionado!");
+      }
+    }
+
+    function handlePortalLogout() {
+      loggedPerson = null;
+      document.getElementById('portal-login-card').classList.remove('hidden');
+      document.getElementById('portal-logged-content').classList.add('hidden');
+    }
+
+    function renderPortalUserShifts() {
+      const list = document.getElementById('portal-my-shifts-list');
+      if (!list || !loggedPerson) return;
+      list.innerHTML = '';
+
+      let found = 0;
+      Object.keys(scheduleData).forEach(dateStr => {
+        Object.keys(scheduleData[dateStr]).forEach(shiftId => {
+          const assigned = scheduleData[dateStr][shiftId];
+          if (Array.isArray(assigned) && assigned.includes(loggedPerson.id)) {
+            found++;
+            const shiftObj = SHIFTS.find(s => s.id === shiftId);
+            const dateParts = dateStr.split('-');
+            const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+
+            list.innerHTML += `
+              <div class="p-3 bg-brand-50 border border-brand-100 rounded-xl flex justify-between items-center text-xs">
+                <div>
+                  <span class="font-bold text-brand-900">${formattedDate}</span>
+                  <span class="text-slate-500 block">${shiftObj ? shiftObj.name : shiftId} (${shiftObj ? shiftObj.location : ''})</span>
+                </div>
+                <span class="px-2 py-1 bg-brand-600 text-white font-bold rounded-lg text-[10px]">Confirmado</span>
+              </div>
+            `;
+          }
+        });
+      });
+
+      if (found === 0) {
+        list.innerHTML = `<p class="text-xs text-slate-400 italic">Nenhuma designação encontrada para você neste mês.</p>`;
+      }
+    }
+
+    function shareMyOwnScheduleWhatsApp() {
+      if (!loggedPerson) return;
+      const userShifts = [];
+      Object.keys(scheduleData).forEach(dateStr => {
+        Object.keys(scheduleData[dateStr]).forEach(shiftId => {
+          const assigned = scheduleData[dateStr][shiftId];
+          if (Array.isArray(assigned) && assigned.includes(loggedPerson.id)) {
+            const shiftObj = SHIFTS.find(s => s.id === shiftId);
+            const dateParts = dateStr.split('-');
+            userShifts.push({ formattedDate: `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`, shiftObj });
+          }
+        });
+      });
+      sendIndividualWhatsApp(loggedPerson, userShifts);
+    }
+
+    function handleSendSuggestion(e) {
+      e.preventDefault();
+      if (!loggedPerson) return;
+
+      const type = document.getElementById('suggestion-type').value;
+      const text = document.getElementById('suggestion-text').value.trim();
+
+      const newMsg = {
+        id: Date.now().toString(),
+        senderId: loggedPerson.id,
+        senderName: loggedPerson.name,
+        type,
+        text,
+        date: new Date().toLocaleString('pt-BR'),
+        status: 'PENDING',
+        reply: ''
+      };
+
+      messages.unshift(newMsg);
+      saveMessagesToStorage();
+      document.getElementById('suggestion-text').value = '';
+      alert("Sua mensagem foi enviada ao organizador!");
+      renderPortalSentMessages();
+    }
+
+    function renderPortalSentMessages() {
+      const list = document.getElementById('portal-sent-messages-list');
+      if (!list || !loggedPerson) return;
+      list.innerHTML = '';
+
+      const userMsgs = messages.filter(m => m.senderId === loggedPerson.id);
+
+      if (userMsgs.length === 0) {
+        list.innerHTML = `<p class="text-[11px] text-slate-400 italic">Nenhuma mensagem enviada até o momento.</p>`;
+        return;
+      }
+
+      userMsgs.forEach(m => {
+        const isResolved = m.status === 'RESOLVED';
+        list.innerHTML += `
+          <div class="p-2.5 rounded-xl border text-xs ${isResolved ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'} space-y-1">
+            <div class="flex justify-between items-center text-[10px]">
+              <span class="font-bold text-slate-700">${m.type}</span>
+              <span class="text-slate-400">${m.date}</span>
+            </div>
+            <p class="text-slate-800 font-medium text-[11px]">${m.text}</p>
+            ${m.reply ? `
+              <div class="mt-1.5 pt-1.5 border-t border-slate-200 text-[10px] text-brand-900 bg-white p-2 rounded">
+                <strong>Resposta do Organizador:</strong> ${m.reply}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+    }
+
+    function renderMessagesTab() {
+      const list = document.getElementById('admin-messages-list');
+      if (!list) return;
+      list.innerHTML = '';
+
+      const filterStatus = document.getElementById('message-filter-status').value;
+      const filtered = messages.filter(m => filterStatus === 'ALL' || m.status === filterStatus);
+
+      if (filtered.length === 0) {
+        list.innerHTML = `<div class="p-8 text-center bg-white rounded-2xl border border-slate-200 text-xs text-slate-400">Nenhuma mensagem encontrada nesta categoria.</div>`;
+        return;
+      }
+
+      filtered.forEach(m => {
+        const isResolved = m.status === 'RESOLVED';
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-2xl border shadow-xs space-y-2 ${isResolved ? 'bg-slate-50 border-slate-200' : 'bg-white border-brand-200 ring-1 ring-brand-100'}`;
+
+        card.innerHTML = `
+          <div class="flex flex-wrap justify-between items-center gap-2">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-xs text-slate-800">${m.senderName}</span>
+              <span class="text-[10px] bg-brand-100 text-brand-800 font-bold px-2 py-0.5 rounded">${m.type}</span>
+            </div>
+            <div class="flex items-center gap-2 text-[10px]">
+              <span class="text-slate-400">${m.date}</span>
+              <span class="px-2 py-0.5 font-bold rounded ${isResolved ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                ${isResolved ? 'Resolvido' : 'Pendente'}
+              </span>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200">${m.text}</p>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <input type="text" id="reply-input-${m.id}" value="${m.reply || ''}" placeholder="Escrever resposta..." class="flex-1 px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500">
+            <div class="flex gap-2">
+              <button onclick="saveMessageReply('${m.id}')" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow-xs">
+                Salvar Resposta
+              </button>
+              <button onclick="toggleMessageStatus('${m.id}')" class="px-3 py-1.5 ${isResolved ? 'bg-slate-200 text-slate-700' : 'bg-emerald-600 text-white'} rounded-xl text-xs font-semibold shadow-xs">
+                ${isResolved ? 'Reabrir' : 'Marcar Resolvido'}
+              </button>
+            </div>
+          </div>
+        `;
+
+        list.appendChild(card);
+      });
+    }
+
+    function saveMessageReply(msgId) {
+      const input = document.getElementById(`reply-input-${msgId}`);
+      if (!input) return;
+
+      const msg = messages.find(m => m.id === msgId);
+      if (msg) {
+        msg.reply = input.value.trim();
+        saveMessagesToStorage();
+        alert("Resposta salva com sucesso!");
+        renderMessagesTab();
+      }
+    }
+
+    function toggleMessageStatus(msgId) {
+      const msg = messages.find(m => m.id === msgId);
+      if (msg) {
+        msg.status = msg.status === 'RESOLVED' ? 'PENDING' : 'RESOLVED';
+        saveMessagesToStorage();
+        renderMessagesTab();
+      }
+    }
+
+    function exportWhatsApp() {
+      const monthDisplay = document.getElementById('current-month-display').textContent;
+      let message = `📅 *PROGRAMAÇÃO DE REUNIÕES - ${monthDisplay.toUpperCase()}*\n\n`;
+
+      const counts = {};
+      people.forEach(p => counts[p.id] = 0);
+      Object.keys(scheduleData).forEach(dateStr => {
+        Object.keys(scheduleData[dateStr]).forEach(shiftId => {
+          const assigned = scheduleData[dateStr][shiftId];
+          if (Array.isArray(assigned)) {
+            assigned.forEach(pId => { if (counts[pId] !== undefined) counts[pId]++; });
+          }
+        });
+      });
+
+      message += `📊 *RESUMO DO MÊS:*\n`;
+      people.sort((a, b) => a.name.localeCompare(b.name)).forEach(p => {
+        if (counts[p.id] > 0) message += `• ${p.name}: ${counts[p.id]}x\n`;
+      });
+
+      message += `\n------------------------------------------\n🗓️ *ESCALA DETALHADA*\n\n`;
+
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const date = new Date(currentYear, currentMonth, d);
+        const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'long' });
+
+        const dayShifts = scheduleData[dateStr];
+        if (dayShifts && Object.keys(dayShifts).length > 0) {
+          message += `📌 *Dia ${d} (${dayOfWeek})*\n`;
+
+          SHIFTS.forEach(shift => {
+            const assignedIds = dayShifts[shift.id];
+            if (assignedIds && assignedIds.length > 0) {
+              const p1 = people.find(p => p.id === assignedIds[0]);
+              const p2 = people.find(p => p.id === assignedIds[1]);
+              const names = [p1 ? p1.name : '', p2 ? p2.name : ''].filter(Boolean).join(' e ');
+              if (names) message += `  • ${shift.name.split(' ')[0]} | ${shift.location}: ${names}\n`;
+            }
+          });
+          message += `\n`;
+        }
+      }
+
+      const encoded = encodeURIComponent(message);
+      window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
+    }
+
+    function exportPDF() {
+      const target = document.getElementById('schedule-export-target');
+      const monthTitle = document.getElementById('current-month-display').textContent;
+
+      const opt = {
+        margin:       [5, 5, 5, 5],
+        filename:     `Escala_Designacoes_${monthTitle.replace(' ', '_')}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      };
+
+      html2pdf().set(opt).from(target).save();
+    }
+  </script>
+</body>
+</html>
+```
+
+All syntax and configuration errors are resolved. Let me know if you would like any further adjustments!

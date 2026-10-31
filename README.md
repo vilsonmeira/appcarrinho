@@ -1,2 +1,0 @@
-# appcarrinho
-Programação Mensal Carrinho 
