@@ -349,12 +349,29 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Senha de Acesso</label>
-            <input type="password" id="portal-password-input" required placeholder="Digite sua senha (padrão: 1234)" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500">
+            <input type="password" id="portal-password-input" required placeholder="Digite sua senha" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500">
           </div>
           <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs rounded-xl transition shadow-sm">
             Entrar no Portal
           </button>
         </form>
+        <div class="border-t border-slate-100 pt-3 text-center">
+          <button type="button" onclick="showPasswordRecovery()" class="text-xs font-semibold text-brand-700 hover:underline">Esqueci minha senha</button>
+        </div>
+        <div id="password-recovery-panel" class="hidden mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+          <h3 class="text-sm font-bold text-slate-800">Recuperar acesso</h3>
+          <p class="text-xs text-slate-600">Selecione seu nome para consultar a pergunta secreta cadastrada.</p>
+          <button type="button" onclick="loadSecretQuestion()" class="w-full rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white">Mostrar pergunta secreta</button>
+          <div id="recovery-question-wrap" class="hidden space-y-2">
+            <p id="recovery-question-text" class="text-xs font-bold text-slate-800"></p>
+            <label class="block text-xs font-semibold text-slate-700">Resposta secreta</label>
+            <input id="recovery-secret-answer" type="password" autocomplete="off" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200" placeholder="Digite a resposta">
+            <label class="block text-xs font-semibold text-slate-700">Nova senha</label>
+            <input id="recovery-new-password" type="password" autocomplete="new-password" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200" placeholder="Digite a nova senha">
+            <button type="button" onclick="resetPasswordWithSecret()" class="w-full rounded-lg bg-brand-600 px-3 py-2 text-xs font-semibold text-white">Redefinir senha</button>
+          </div>
+          <button type="button" onclick="hidePasswordRecovery()" class="text-xs text-slate-600 underline">Cancelar</button>
+        </div>
       </div>
 
       <div id="portal-logged-content" class="hidden space-y-6">
@@ -525,6 +542,22 @@
           </div>
         </div>
 
+        <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 space-y-2">
+          <div class="text-xs font-bold text-amber-900 uppercase">Recuperação de senha</div>
+          <label class="block text-xs font-semibold text-slate-700">Pergunta secreta</label>
+          <select id="person-secret-question" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 bg-white">
+            <option value="">Selecione uma pergunta</option>
+            <option value="Qual era o nome do seu primeiro animal de estimação?">Qual era o nome do seu primeiro animal de estimação?</option>
+            <option value="Em que cidade você nasceu?">Em que cidade você nasceu?</option>
+            <option value="Qual é o primeiro nome da sua mãe?">Qual é o primeiro nome da sua mãe?</option>
+            <option value="Qual era o apelido que você tinha na infância?">Qual era o apelido que você tinha na infância?</option>
+            <option value="Qual foi a primeira escola em que estudou?">Qual foi a primeira escola em que estudou?</option>
+          </select>
+          <label class="block text-xs font-semibold text-slate-700">Resposta secreta</label>
+          <input type="password" id="person-secret-answer" autocomplete="new-password" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200" placeholder="Cadastre uma resposta">
+          <p class="text-[11px] text-amber-800">A resposta é usada para redefinir a senha. Evite respostas fáceis de adivinhar.</p>
+        </div>
+
         <div>
           <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Sobrenome / Família</label>
           <input type="text" id="person-family" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500" placeholder="ex: SILVA, BORGES">
@@ -568,9 +601,51 @@
   <script>
     const DEFAULT_DAYS = [0, 1, 2, 3, 4, 5, 6];
 
+    // A autenticação abaixo controla a interface deste arquivo local.
+    // Para segurança real, as permissões precisam ser validadas também no servidor.
+    function currentRole() {
+      return loggedPerson?.role || 'MEMBER';
+    }
+
+    function hasRole(...roles) {
+      return Boolean(loggedPerson && roles.includes(currentRole()));
+    }
+
+    function requireRole(...roles) {
+      if (!hasRole(...roles)) {
+        alert('Acesso não autorizado para este perfil.');
+        return false;
+      }
+      return true;
+    }
+
+    function applyRolePermissions() {
+      const role = loggedPerson ? currentRole() : null;
+      const visibility = {
+        schedule: role === 'ADMIN' || role === 'ASSISTANT',
+        people: role === 'ADMIN',
+        stats: role === 'ADMIN' || role === 'ASSISTANT',
+        messages: role === 'ADMIN',
+        portal: true
+      };
+
+      Object.entries(visibility).forEach(([tab, visible]) => {
+        const button = document.getElementById(`tab-btn-${tab}`);
+        if (button) button.classList.toggle('hidden', !visible);
+      });
+
+      if (!loggedPerson) {
+        ['schedule', 'people', 'stats', 'messages'].forEach(tab => {
+          document.getElementById(`tab-${tab}`)?.classList.add('hidden');
+        });
+        document.getElementById('tab-portal')?.classList.remove('hidden');
+      }
+    }
+
+
     // COMPLETE LIST OF 44 PEOPLE (GENERAL AVAILABILITY MODE)
     const INITIAL_PEOPLE = [
-      { id: '1', name: 'LUCAS', phone: '+55(11)99331-4400', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123', role: 'ADMIN' },
+      { id: '1', name: 'LUCAS', phone: '+55(11)99331-4400', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123', role: 'MEMBER' },
       { id: '2', name: 'SIDNEY', phone: '+55(11)99306-9153', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123', role: 'ASSISTANT' },
       { id: '3', name: 'AMÉRICO', phone: '+55(11)96650-8440', maxMonthly: 3, family: '', needsSeats: true, allowedDays: [...DEFAULT_DAYS], password: '123', role: 'MEMBER' },
       { id: '4', name: 'CARLOS ALMIR', phone: '+55(13)98154-5672', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
@@ -582,7 +657,7 @@
       { id: '10', name: 'RODRIGO', phone: '+55(11)95449-5467', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
       { id: '11', name: 'RONE', phone: '+55(11)95095-0945', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
       { id: '12', name: 'VALMIR', phone: '+55(11)96365-5889', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
-      { id: '13', name: 'VILSON', phone: '+55(11)91059-2208', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
+      { id: '13', name: 'VILSON', phone: '+55(11)91059-2208', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '841234', role: 'ADMIN', secretQuestion: '', secretAnswer: '' },
       { id: '14', name: 'MARCOS', phone: '+55(11)97777-1111', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
       { id: '15', name: 'PAULO', phone: '+55(11)98888-2222', maxMonthly: 3, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
       { id: '16', name: 'ADRIANA LIM.', phone: '+55(11)96357-7712', maxMonthly: 2, family: 'LIMA', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' },
@@ -626,15 +701,47 @@
     const DAY_ABBR = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     const HOLIDAYS = ['01-01', '04-21', '05-01', '09-07', '10-12', '11-02', '11-15', '12-25'];
 
-    let people = JSON.parse(localStorage.getItem('escalapro_people')) || INITIAL_PEOPLE;
-    let currentYear = 2026;
-    let currentMonth = 4; // 0-indexed (4 = Maio)
+    function readStoredJSON(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (error) {
+        console.error(`Falha ao ler ${key}:`, error);
+        return fallback;
+      }
+    }
+
+    let people = readStoredJSON('escalapro_people', INITIAL_PEOPLE).map(person => ({
+      ...person,
+      role: ['ADMIN', 'ASSISTANT', 'MEMBER'].includes(person.role) ? person.role : 'MEMBER',
+      allowedDays: Array.isArray(person.allowedDays) ? person.allowedDays : [...DEFAULT_DAYS],
+      secretQuestion: person.secretQuestion || '',
+      secretAnswer: person.secretAnswer || ''
+    }));
+    // Migração versionada: transfere a administração para VILSON e define a senha inicial 841234.
+    // A versão nova força a atualização mesmo em navegadores que já aplicaram a migração anterior.
+    if (localStorage.getItem('escalapro_admin_reset_vilson_v2') !== '1') {
+      const vilsonAdmin = people.find(person => String(person.name || '').trim().toUpperCase() === 'VILSON');
+      if (vilsonAdmin) {
+        vilsonAdmin.role = 'ADMIN';
+        vilsonAdmin.password = '841234';
+        vilsonAdmin.secretQuestion = vilsonAdmin.secretQuestion || '';
+        vilsonAdmin.secretAnswer = vilsonAdmin.secretAnswer || '';
+      }
+      people.forEach(person => {
+        if (String(person.name || '').trim().toUpperCase() === 'LUCAS') person.role = 'MEMBER';
+      });
+      localStorage.setItem('escalapro_admin_reset_vilson_v2', '1');
+    }
+
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth();
     let isAutoMode = true;
     let scheduleData = {}; 
     let loggedPerson = null;
     let activeIndividualPersonId = null;
-    let messages = JSON.parse(localStorage.getItem('escalapro_messages')) || [];
-    let sentChecklist = JSON.parse(localStorage.getItem('escalapro_sent_checklist')) || {};
+    let messages = readStoredJSON('escalapro_messages', []);
+    let sentChecklist = readStoredJSON('escalapro_sent_checklist', {});
 
     window.onload = function() {
       savePeopleToStorage();
@@ -652,6 +759,8 @@
       populatePortalDropdown();
       updateUnreadBadge();
       loadSavedCoverImage();
+      applyRolePermissions();
+      switchTab('portal');
 
       if ('serviceWorker' in navigator) {
         const swCode = `
@@ -676,6 +785,7 @@
     }
 
     function saveManualSchedule() {
+      if (!requireRole('ADMIN', 'ASSISTANT')) return;
       saveScheduleToStorage();
       alert("Programação do mês salva com sucesso no sistema!");
     }
@@ -907,8 +1017,36 @@
     }
 
     function handleIndividualChange(dateStr, shiftId, index, newPersonId) {
+      if (!requireRole('ADMIN', 'ASSISTANT')) return;
       if (!scheduleData[dateStr]) scheduleData[dateStr] = {};
       if (!scheduleData[dateStr][shiftId]) scheduleData[dateStr][shiftId] = ['', ''];
+
+      if (newPersonId) {
+        const person = people.find(p => p.id === newPersonId);
+        const date = new Date(`${dateStr}T12:00:00`);
+        const shift = SHIFTS.find(item => item.id === shiftId);
+        const dayOfWeek = date.getDay();
+        const otherSlotId = scheduleData[dateStr][shiftId][index === 0 ? 1 : 0];
+        const alreadyToday = Object.entries(scheduleData[dateStr]).some(([otherShift, pair]) =>
+          Array.isArray(pair) && pair.some((id, slot) =>
+            id === newPersonId && !(otherShift === shiftId && slot === index)
+          )
+        );
+        let monthlyCount = 0;
+        Object.values(scheduleData).forEach(day => Object.values(day || {}).forEach(pair => {
+          if (Array.isArray(pair)) monthlyCount += pair.filter(id => id === newPersonId).length;
+        }));
+        const max = person?.maxMonthly || 3;
+
+        if (!person) { alert('Integrante não encontrado.'); renderCalendar(); return; }
+        if (newPersonId === otherSlotId) { alert('A mesma pessoa não pode ocupar as duas vagas do mesmo horário.'); renderCalendar(); return; }
+        if (alreadyToday) { alert('Este integrante já está escalado em outro horário neste dia.'); renderCalendar(); return; }
+        if (!(person.allowedDays || DEFAULT_DAYS).includes(dayOfWeek)) { alert('Este integrante não está disponível neste dia da semana.'); renderCalendar(); return; }
+        if (person.needsSeats && !shift?.hasSeats) { alert('Este integrante precisa de um local com assento.'); renderCalendar(); return; }
+        if (shiftId === 'T1' && isAfternoonBlocked(date)) { alert('Não há programação à tarde neste dia ou feriado.'); renderCalendar(); return; }
+        if (scheduleData[dateStr]?.[shiftId]?.[index] === newPersonId) monthlyCount--;
+        if (monthlyCount >= max) { alert('O limite mensal deste integrante já foi atingido.'); renderCalendar(); return; }
+      }
 
       scheduleData[dateStr][shiftId][index] = newPersonId;
 
@@ -918,6 +1056,7 @@
     }
 
     function generateSchedule() {
+      if (loggedPerson && !requireRole('ADMIN', 'ASSISTANT')) return;
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
       
       if (isAutoMode || Object.keys(scheduleData).length === 0) {
@@ -1043,10 +1182,6 @@
               <span class="font-semibold text-slate-800">${person.maxMonthly || 3}x no mês</span>
             </div>
             <div class="flex justify-between text-slate-600">
-              <span>Senha Portal:</span>
-              <span class="font-mono text-slate-500">${person.password || '1234'}</span>
-            </div>
-            <div class="flex justify-between text-slate-600">
               <span>Dias Permitidos:</span>
               <span class="font-medium text-brand-700 max-w-[150px] text-right truncate" title="${allowedDaysText}">${allowedDaysText}</span>
             </div>
@@ -1063,6 +1198,17 @@
     }
 
     function switchTab(tab) {
+      const allowed = {
+        schedule: hasRole('ADMIN', 'ASSISTANT'),
+        people: hasRole('ADMIN'),
+        stats: hasRole('ADMIN', 'ASSISTANT'),
+        messages: hasRole('ADMIN'),
+        portal: Boolean(loggedPerson)
+      };
+      if (!allowed[tab]) {
+        if (tab !== 'portal') alert('Entre com uma conta autorizada para acessar esta área.');
+        tab = 'portal';
+      }
       ['schedule', 'people', 'stats', 'messages', 'portal'].forEach(t => {
         const tabElem = document.getElementById(`tab-${t}`);
         const btnElem = document.getElementById(`tab-btn-${t}`);
@@ -1080,6 +1226,7 @@
     }
 
     function openPersonModal(personId = null) {
+      if (!requireRole('ADMIN')) return;
       const modal = document.getElementById('person-modal');
       const form = document.getElementById('person-form');
       const deleteBtn = document.getElementById('delete-person-btn');
@@ -1094,6 +1241,8 @@
           document.getElementById('person-phone').value = p.phone || '';
           document.getElementById('person-max-limit').value = p.maxMonthly || 3;
           document.getElementById('person-password').value = p.password || '1234';
+          document.getElementById('person-secret-question').value = p.secretQuestion || '';
+          document.getElementById('person-secret-answer').value = p.secretAnswer || '';
           document.getElementById('person-role').value = p.role || 'MEMBER';
           document.getElementById('person-family').value = p.family || '';
           document.getElementById('person-needs-seats').checked = Boolean(p.needsSeats);
@@ -1110,6 +1259,8 @@
         document.getElementById('modal-person-title').textContent = "Novo Integrante";
         document.getElementById('person-id').value = '';
         document.getElementById('person-password').value = '1234';
+        document.getElementById('person-secret-question').value = '';
+        document.getElementById('person-secret-answer').value = '';
         document.getElementById('person-role').value = 'MEMBER';
         document.getElementById('person-needs-seats').checked = false;
         if (deleteBtn) deleteBtn.classList.add('hidden');
@@ -1128,10 +1279,16 @@
     }
 
     function deletePerson() {
+      if (!requireRole('ADMIN')) return;
       const id = document.getElementById('person-id').value;
       const p = people.find(item => item.id === id);
       
       if (!p) return;
+
+      if (p.role === 'ADMIN' && people.filter(item => item.role === 'ADMIN').length <= 1) {
+        alert('Não é permitido excluir o último administrador do sistema.');
+        return;
+      }
 
       if (confirm(`Tem certeza que deseja excluir o integrante "${p.name}"?`)) {
         people = people.filter(item => item.id !== id);
@@ -1155,12 +1312,15 @@
     }
 
     function savePerson(e) {
+      if (!requireRole('ADMIN')) { e.preventDefault(); return; }
       e.preventDefault();
       const id = document.getElementById('person-id').value;
       const name = document.getElementById('person-name').value.trim().toUpperCase();
       const phone = document.getElementById('person-phone').value.trim();
       const maxMonthly = parseInt(document.getElementById('person-max-limit').value) || 3;
       const password = document.getElementById('person-password').value.trim() || '1234';
+      const secretQuestion = document.getElementById('person-secret-question').value;
+      const secretAnswer = document.getElementById('person-secret-answer').value.trim();
       const role = document.getElementById('person-role').value || 'MEMBER';
       const family = document.getElementById('person-family').value.trim().toUpperCase();
       const needsSeats = Boolean(document.getElementById('person-needs-seats').checked);
@@ -1174,10 +1334,16 @@
       if (id) {
         const index = people.findIndex(p => p.id === id);
         if (index !== -1) {
-          people[index] = { id, name, phone, maxMonthly, password, role, family, needsSeats, allowedDays };
+          const oldPerson = people[index];
+          if (oldPerson.role === 'ADMIN' && role !== 'ADMIN' &&
+              people.filter(p => p.role === 'ADMIN').length <= 1) {
+            alert('O sistema precisa manter pelo menos um administrador.');
+            return;
+          }
+          people[index] = { ...oldPerson, id, name, phone, maxMonthly, password, role, family, needsSeats, allowedDays, secretQuestion, secretAnswer };
         }
       } else {
-        const newPerson = { id: Date.now().toString(), name, phone, maxMonthly, password, role, family, needsSeats, allowedDays };
+        const newPerson = { id: Date.now().toString(), name, phone, maxMonthly, password, role, family, needsSeats, allowedDays, secretQuestion, secretAnswer };
         people.push(newPerson);
       }
 
@@ -1316,6 +1482,7 @@
 
     /* MODAL WHATSAPP COM CHECKLIST DE ENVIADO */
     function openMassWhatsAppModal() {
+      if (!requireRole('ADMIN', 'ASSISTANT')) return;
       const list = document.getElementById('mass-whatsapp-list');
       if (!list) return;
       list.innerHTML = '';
@@ -1376,7 +1543,7 @@
 
     function toggleChecklistStatus(personId, isChecked) {
       sentChecklist[personId] = isChecked;
-      localStorage.setItem('escalapro_sent_checklist', JSON.stringify(sentChecklist));
+      localStorage.setItem(`escalapro_sent_checklist_${currentYear}_${currentMonth}`, JSON.stringify(sentChecklist));
       
       const item = document.getElementById(`mass-item-${personId}`);
       if (item) {
@@ -1420,20 +1587,71 @@
       });
     }
 
+    function showPasswordRecovery() {
+      const panel = document.getElementById('password-recovery-panel');
+      panel?.classList.remove('hidden');
+      document.getElementById('recovery-question-wrap')?.classList.add('hidden');
+      document.getElementById('recovery-secret-answer').value = '';
+      document.getElementById('recovery-new-password').value = '';
+    }
+
+    function hidePasswordRecovery() {
+      document.getElementById('password-recovery-panel')?.classList.add('hidden');
+    }
+
+    function loadSecretQuestion() {
+      const pId = document.getElementById('portal-user-select').value;
+      const p = people.find(item => item.id === pId);
+      if (!p) {
+        alert('Selecione seu nome antes de continuar.');
+        return;
+      }
+      if (!p.secretQuestion || !p.secretAnswer) {
+        alert('Não existe pergunta secreta cadastrada para este usuário. Peça ao administrador para cadastrá-la.');
+        return;
+      }
+      document.getElementById('recovery-question-text').textContent = p.secretQuestion;
+      document.getElementById('recovery-question-wrap').classList.remove('hidden');
+    }
+
+    function resetPasswordWithSecret() {
+      const pId = document.getElementById('portal-user-select').value;
+      const p = people.find(item => item.id === pId);
+      const answer = document.getElementById('recovery-secret-answer').value.trim().toLocaleLowerCase('pt-BR');
+      const newPassword = document.getElementById('recovery-new-password').value.trim();
+      if (!p || !p.secretAnswer || answer !== String(p.secretAnswer).trim().toLocaleLowerCase('pt-BR')) {
+        alert('Resposta secreta incorreta.');
+        return;
+      }
+      if (newPassword.length < 4) {
+        alert('A nova senha deve ter pelo menos 4 caracteres.');
+        return;
+      }
+      p.password = newPassword;
+      savePeopleToStorage();
+      document.getElementById('portal-password-input').value = '';
+      document.getElementById('recovery-secret-answer').value = '';
+      document.getElementById('recovery-new-password').value = '';
+      hidePasswordRecovery();
+      alert('Senha redefinida. Entre com sua nova senha.');
+    }
+
     function handlePortalLogin(e) {
       e.preventDefault();
       const pId = document.getElementById('portal-user-select').value;
       const pass = document.getElementById('portal-password-input').value.trim();
 
       const p = people.find(item => item.id === pId);
-      if (p && (p.password === pass || pass === '1234')) {
-        loggedPerson = p;
+      if (p && pass && String(p.password || '') === pass) {
+        loggedPerson = { ...p, role: p.role || 'MEMBER' };
         document.getElementById('portal-login-card').classList.add('hidden');
         document.getElementById('portal-logged-content').classList.remove('hidden');
         document.getElementById('portal-welcome-title').textContent = `Olá, ${p.name}!`;
         document.getElementById('portal-avatar').textContent = p.name.substring(0, 2);
         renderPortalUserShifts();
         renderPortalSentMessages();
+        applyRolePermissions();
+        switchTab(loggedPerson.role === 'MEMBER' ? 'portal' : 'schedule');
       } else {
         alert("Senha incorreta ou integrante não selecionado!");
       }
@@ -1443,6 +1661,9 @@
       loggedPerson = null;
       document.getElementById('portal-login-card').classList.remove('hidden');
       document.getElementById('portal-logged-content').classList.add('hidden');
+      document.getElementById('portal-password-input').value = '';
+      applyRolePermissions();
+      switchTab('portal');
     }
 
     function renderPortalUserShifts() {
@@ -1551,6 +1772,7 @@
     }
 
     function renderMessagesTab() {
+      if (!requireRole('ADMIN')) return;
       const list = document.getElementById('admin-messages-list');
       if (!list) return;
       list.innerHTML = '';
@@ -1602,6 +1824,7 @@
     }
 
     function saveMessageReply(msgId) {
+      if (!requireRole('ADMIN')) return;
       const input = document.getElementById(`reply-input-${msgId}`);
       if (!input) return;
 
@@ -1615,6 +1838,7 @@
     }
 
     function toggleMessageStatus(msgId) {
+      if (!requireRole('ADMIN')) return;
       const msg = messages.find(m => m.id === msgId);
       if (msg) {
         msg.status = msg.status === 'RESOLVED' ? 'PENDING' : 'RESOLVED';
@@ -1624,6 +1848,7 @@
     }
 
     function exportWhatsApp() {
+      if (!requireRole('ADMIN', 'ASSISTANT')) return;
       const monthDisplay = document.getElementById('current-month-display').textContent;
       let message = `📅 *PROGRAMAÇÃO DE REUNIÕES - ${monthDisplay.toUpperCase()}*\n\n`;
 
@@ -1639,7 +1864,7 @@
       });
 
       message += `📊 *RESUMO DO MÊS:*\n`;
-      people.sort((a, b) => a.name.localeCompare(b.name)).forEach(p => {
+      [...people].sort((a, b) => a.name.localeCompare(b.name)).forEach(p => {
         if (counts[p.id] > 0) message += `• ${p.name}: ${counts[p.id]}x\n`;
       });
 
@@ -1674,6 +1899,7 @@
     }
 
     function exportPDF() {
+      if (!requireRole('ADMIN', 'ASSISTANT')) return;
       const target = document.getElementById('schedule-export-target');
       const monthTitle = document.getElementById('current-month-display').textContent;
 
