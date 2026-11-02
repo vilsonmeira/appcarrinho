@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="application-name" content="EscalaPro">
-  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkVzY2FsYVBybyAyLjAiLAogICJzaG9ydF9uYW1lIjogIkVzY2FsYVBybyIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF_jb2xvciI6ICIjMGYxNzJhIiwKICAidGhlbWVfY29sb3IiOiAiIzBmMTcyYSIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImh0dHBzOi8vY2RuLWljb25zLXBuZy5mbGF0aWNvbi5jb20vNTEyLzM2NTIvMzY1MiI3OS5wbmciLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgIH0KICBdCn0=">
+  <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIkVzY2FsYVBybyAyLjAiLAogICJzaG9ydF9uYW1lIjogIkVzY2FsYVBybyIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMGYxNzJhIiwKICAidGhlbWVfY29sb3IiOiAiIzBmMTcyYSIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImh0dHBzOi8vY2RuLWljb25zLXBuZy5mbGF0aWNvbi5jb20vNTEyLzM2NTIvMzY1Mi5wbmciLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgIH0KICBdCn0=">
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -131,6 +131,9 @@
         <button id="tab-btn-messages" onclick="switchTab('messages')" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-brand-700/50 transition-all relative">
           <i class="fa-solid fa-comments text-xs"></i> <span>Mensagens</span>
           <span id="unread-messages-badge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full border border-brand-900">0</span>
+        </button>
+        <button id="tab-btn-checklist" onclick="switchTab('checklist')" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-brand-700/50 transition-all">
+          <i class="fa-solid fa-list-check text-xs"></i> <span>Checklist</span>
         </button>
         <button id="tab-btn-portal" onclick="switchTab('portal')" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-amber-300 hover:text-amber-100 hover:bg-brand-700/50 transition-all">
           <i class="fa-solid fa-user-lock text-xs"></i> <span>Acesso ao Sistema</span>
@@ -331,6 +334,15 @@
       </div>
     </div>
 
+    <!-- TAB CHECKLIST -->
+    <div id="tab-checklist" class="hidden space-y-4">
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
+        <div><h2 class="text-lg font-bold text-slate-800">Checklist de conferência da escala</h2><p class="text-xs text-slate-500">Confira os turnos de cada integrante e envie o resumo pelo WhatsApp.</p></div>
+        <button onclick="renderChecklist()" class="px-3 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold">Atualizar checklist</button>
+      </div>
+      <div id="checklist-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+    </div>
+
     <!-- TAB 5: PORTAL DO INTEGRANTE -->
     <div id="tab-portal" class="hidden space-y-6">
       <div id="portal-login-card" class="max-w-md mx-auto bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
@@ -399,6 +411,14 @@
               <i class="fa-solid fa-calendar-check text-brand-600"></i> Minhas Escalas no Mês
             </h3>
             <div id="portal-my-shifts-list" class="space-y-2"></div>
+            <div class="border-t pt-3 space-y-2">
+              <h4 class="text-xs font-bold text-slate-700">Solicitar mudança do local do meu turno</h4>
+              <select id="location-request-shift" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200"><option value="">Selecione um turno da sua escala</option></select>
+              <select id="location-request-place" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200"><option value="PRAÇA">PRAÇA</option><option value="DROGASIL / JAPONÊS">DROGASIL / JAPONÊS</option><option value="REAL MIX / PRÉDIOS">REAL MIX / PRÉDIOS</option><option value="OUTRO">Outro local (descrever abaixo)</option></select>
+              <input id="location-request-other" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200" placeholder="Outro local / justificativa (opcional)">
+              <button onclick="submitLocationRequest()" class="w-full px-3 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold">Enviar para aprovação do administrador</button>
+              <p class="text-[10px] text-slate-500">A mudança só será aplicada depois da aprovação do administrador.</p>
+            </div>
           </div>
 
           <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
@@ -516,14 +536,10 @@
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Telefone / WhatsApp</label>
             <input type="text" id="person-phone" required class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500" placeholder="+55(11)99999-9999">
           </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Limite Máx. / Mês</label>
-            <select id="person-max-limit" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500">
-              <option value="1">1 vez no mês</option>
-              <option value="2">2 vezes no mês</option>
-              <option value="3" selected>3 vezes no mês</option>
-              <option value="4">4 vezes no mês</option>
-            </select>
+          <div class="col-span-2 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
+            <div class="text-xs font-bold text-indigo-900">Frequência de participação</div>
+            <p class="text-[11px] text-indigo-800 mt-1">Defina a frequência separadamente em cada dia da semana, logo abaixo. O antigo limite mensal deixa de controlar a escala automática.</p>
+            <input type="hidden" id="person-max-limit" value="99">
           </div>
         </div>
 
@@ -567,21 +583,85 @@
           <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Acessibilidade / Saúde</label>
           <label class="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer pt-1">
             <input type="checkbox" id="person-needs-seats" class="rounded text-brand-600 w-4 h-4">
-            <span>Exige Local com Assento (PCD/Saúde)</span>
+            <span>Precisa trabalhar no local PCD (PRAÇA)</span>
           </label>
+          <p class="text-[11px] text-slate-600 mt-2">A PRAÇA é o único local com acessibilidade PCD. Ao marcar esta opção, o sistema só poderá escalar este integrante no horário da Praça (07h às 09h).</p>
         </div>
 
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Dias Permitidos da Semana</label>
-          <div class="grid grid-cols-4 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
-            <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700"><input type="checkbox" id="day-1" value="1" checked class="rounded text-brand-600"> Seg</label>
-            <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700"><input type="checkbox" id="day-2" value="2" checked class="rounded text-brand-600"> Ter</label>
-            <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700"><input type="checkbox" id="day-3" value="3" checked class="rounded text-brand-600"> Qua</label>
-            <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700"><input type="checkbox" id="day-4" value="4" checked class="rounded text-brand-600"> Qui</label>
-            <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700"><input type="checkbox" id="day-5" value="5" checked class="rounded text-brand-600"> Sex</label>
-            <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700"><input type="checkbox" id="day-6" value="6" checked class="rounded text-brand-600"> Sáb</label>
-            <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700"><input type="checkbox" id="day-0" value="0" checked class="rounded text-brand-600"> Dom</label>
+        <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-3 space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-indigo-900 uppercase">Disponibilidade semanal por horário</label>
+            <p class="text-[11px] text-indigo-800 mt-1">Marque os horários permitidos e escolha a frequência de participação de cada dia. A configuração vale para todos os horários marcados naquele dia.</p>
           </div>
+          <div class="space-y-2 text-xs">
+            <div class="grid grid-cols-[66px_104px_repeat(3,minmax(0,1fr))] gap-1.5 items-center px-1 text-[9px] font-bold uppercase tracking-wide text-indigo-900">
+              <span>Dia</span><span>Frequência</span><span class="text-center">07h–09h</span><span class="text-center">09h–11h</span><span class="text-center">16h–18h</span>
+            </div>
+            <div class="grid grid-cols-[76px_repeat(3,minmax(0,1fr))] gap-2 items-center rounded-lg bg-white border border-indigo-100 px-2 py-2">
+              <label class="font-bold text-slate-700">Domingo</label>
+              <select id="freq-0" aria-label="Frequência Domingo" class="min-w-0 w-full text-[10px] px-1 py-1.5 rounded-lg border border-slate-200 bg-white">
+                <option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="monthly">Mensal</option><option value="none">Não escalar</option>
+              </select>
+              <label class="text-center"><input type="checkbox" id="avail-0-M1" onchange="syncDayAvailability(0)" aria-label="Domingo 07 às 09"></label>
+              <label class="text-center"><input type="checkbox" id="avail-0-M2" onchange="syncDayAvailability(0)" aria-label="Domingo 09 às 11"></label>
+              <label class="text-center"><input type="checkbox" id="avail-0-T1" onchange="syncDayAvailability(0)" aria-label="Domingo 16 às 18"></label>
+            </div>
+            <div class="grid grid-cols-[76px_repeat(3,minmax(0,1fr))] gap-2 items-center rounded-lg bg-white border border-indigo-100 px-2 py-2">
+              <label class="font-bold text-slate-700">Segunda</label>
+              <select id="freq-1" aria-label="Frequência Segunda" class="min-w-0 w-full text-[10px] px-1 py-1.5 rounded-lg border border-slate-200 bg-white">
+                <option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="monthly">Mensal</option><option value="none">Não escalar</option>
+              </select>
+              <label class="text-center"><input type="checkbox" id="avail-1-M1" onchange="syncDayAvailability(1)" aria-label="Segunda 07 às 09"></label>
+              <label class="text-center"><input type="checkbox" id="avail-1-M2" onchange="syncDayAvailability(1)" aria-label="Segunda 09 às 11"></label>
+              <label class="text-center"><input type="checkbox" id="avail-1-T1" onchange="syncDayAvailability(1)" aria-label="Segunda 16 às 18"></label>
+            </div>
+            <div class="grid grid-cols-[76px_repeat(3,minmax(0,1fr))] gap-2 items-center rounded-lg bg-white border border-indigo-100 px-2 py-2">
+              <label class="font-bold text-slate-700">Terça</label>
+              <select id="freq-2" aria-label="Frequência Terça" class="min-w-0 w-full text-[10px] px-1 py-1.5 rounded-lg border border-slate-200 bg-white">
+                <option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="monthly">Mensal</option><option value="none">Não escalar</option>
+              </select>
+              <label class="text-center"><input type="checkbox" id="avail-2-M1" onchange="syncDayAvailability(2)" aria-label="Terça 07 às 09"></label>
+              <label class="text-center"><input type="checkbox" id="avail-2-M2" onchange="syncDayAvailability(2)" aria-label="Terça 09 às 11"></label>
+              <label class="text-center"><input type="checkbox" id="avail-2-T1" onchange="syncDayAvailability(2)" aria-label="Terça 16 às 18"></label>
+            </div>
+            <div class="grid grid-cols-[76px_repeat(3,minmax(0,1fr))] gap-2 items-center rounded-lg bg-white border border-indigo-100 px-2 py-2">
+              <label class="font-bold text-slate-700">Quarta</label>
+              <select id="freq-3" aria-label="Frequência Quarta" class="min-w-0 w-full text-[10px] px-1 py-1.5 rounded-lg border border-slate-200 bg-white">
+                <option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="monthly">Mensal</option><option value="none">Não escalar</option>
+              </select>
+              <label class="text-center"><input type="checkbox" id="avail-3-M1" onchange="syncDayAvailability(3)" aria-label="Quarta 07 às 09"></label>
+              <label class="text-center"><input type="checkbox" id="avail-3-M2" onchange="syncDayAvailability(3)" aria-label="Quarta 09 às 11"></label>
+              <label class="text-center"><input type="checkbox" id="avail-3-T1" onchange="syncDayAvailability(3)" aria-label="Quarta 16 às 18"></label>
+            </div>
+            <div class="grid grid-cols-[76px_repeat(3,minmax(0,1fr))] gap-2 items-center rounded-lg bg-white border border-indigo-100 px-2 py-2">
+              <label class="font-bold text-slate-700">Quinta</label>
+              <select id="freq-4" aria-label="Frequência Quinta" class="min-w-0 w-full text-[10px] px-1 py-1.5 rounded-lg border border-slate-200 bg-white">
+                <option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="monthly">Mensal</option><option value="none">Não escalar</option>
+              </select>
+              <label class="text-center"><input type="checkbox" id="avail-4-M1" onchange="syncDayAvailability(4)" aria-label="Quinta 07 às 09"></label>
+              <label class="text-center"><input type="checkbox" id="avail-4-M2" onchange="syncDayAvailability(4)" aria-label="Quinta 09 às 11"></label>
+              <label class="text-center"><input type="checkbox" id="avail-4-T1" onchange="syncDayAvailability(4)" aria-label="Quinta 16 às 18"></label>
+            </div>
+            <div class="grid grid-cols-[76px_repeat(3,minmax(0,1fr))] gap-2 items-center rounded-lg bg-white border border-indigo-100 px-2 py-2">
+              <label class="font-bold text-slate-700">Sexta</label>
+              <select id="freq-5" aria-label="Frequência Sexta" class="min-w-0 w-full text-[10px] px-1 py-1.5 rounded-lg border border-slate-200 bg-white">
+                <option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="monthly">Mensal</option><option value="none">Não escalar</option>
+              </select>
+              <label class="text-center"><input type="checkbox" id="avail-5-M1" onchange="syncDayAvailability(5)" aria-label="Sexta 07 às 09"></label>
+              <label class="text-center"><input type="checkbox" id="avail-5-M2" onchange="syncDayAvailability(5)" aria-label="Sexta 09 às 11"></label>
+              <label class="text-center"><input type="checkbox" id="avail-5-T1" onchange="syncDayAvailability(5)" aria-label="Sexta 16 às 18"></label>
+            </div>
+            <div class="grid grid-cols-[76px_repeat(3,minmax(0,1fr))] gap-2 items-center rounded-lg bg-white border border-indigo-100 px-2 py-2">
+              <label class="font-bold text-slate-700">Sábado</label>
+              <select id="freq-6" aria-label="Frequência Sábado" class="min-w-0 w-full text-[10px] px-1 py-1.5 rounded-lg border border-slate-200 bg-white">
+                <option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="monthly">Mensal</option><option value="none">Não escalar</option>
+              </select>
+              <label class="text-center"><input type="checkbox" id="avail-6-M1" onchange="syncDayAvailability(6)" aria-label="Sábado 07 às 09"></label>
+              <label class="text-center"><input type="checkbox" id="avail-6-M2" onchange="syncDayAvailability(6)" aria-label="Sábado 09 às 11"></label>
+              <label class="text-center"><input type="checkbox" id="avail-6-T1" onchange="syncDayAvailability(6)" aria-label="Sábado 16 às 18"></label>
+            </div>
+          </div>
+          <p class="text-[10px] text-indigo-800">A disponibilidade será usada automaticamente na geração da escala e na validação de alterações manuais.</p>
         </div>
 
         <div class="pt-3 border-t border-slate-100 flex justify-between items-center">
@@ -626,7 +706,8 @@
         people: role === 'ADMIN',
         stats: role === 'ADMIN' || role === 'ASSISTANT',
         messages: role === 'ADMIN',
-        portal: true
+        portal: true,
+        checklist: role === 'ADMIN' || role === 'ASSISTANT'
       };
 
       Object.entries(visibility).forEach(([tab, visible]) => {
@@ -635,7 +716,7 @@
       });
 
       if (!loggedPerson) {
-        ['schedule', 'people', 'stats', 'messages'].forEach(tab => {
+        ['schedule', 'people', 'stats', 'messages', 'checklist'].forEach(tab => {
           document.getElementById(`tab-${tab}`)?.classList.add('hidden');
         });
         document.getElementById('tab-portal')?.classList.remove('hidden');
@@ -694,7 +775,7 @@
     // SHIFTS CONFIGURATION (07-09 AM, 09-11 AM, 16-18 PM)
     const SHIFTS = [
       { id: 'M1', name: '07:00 às 09:00 AM', location: 'PRAÇA', hasSeats: true },
-      { id: 'M2', name: '09:00 às 11:00 AM', location: 'DROGASIL / JAPONÊS', hasSeats: true },
+      { id: 'M2', name: '09:00 às 11:00 AM', location: 'DROGASIL / JAPONÊS', hasSeats: false },
       { id: 'T1', name: '16:00 às 18:00 PM', location: 'REAL MIX / PRÉDIOS', hasSeats: false }
     ];
 
@@ -711,13 +792,30 @@
       }
     }
 
-    let people = readStoredJSON('escalapro_people', INITIAL_PEOPLE).map(person => ({
+    // Recuperação/migração: restaura automaticamente os 44 integrantes originais
+    // sem apagar alterações já salvas (telefone, senha, disponibilidade, função etc.).
+    const storedPeople = readStoredJSON('escalapro_people', null);
+    const storedPeopleList = Array.isArray(storedPeople) ? storedPeople : [];
+    const storedById = new Map(storedPeopleList.map(person => [String(person.id), person]));
+    const initialIds = new Set(INITIAL_PEOPLE.map(person => String(person.id)));
+    const mergedPeople = INITIAL_PEOPLE.map(basePerson => ({
+      ...basePerson,
+      ...(storedById.get(String(basePerson.id)) || {})
+    }));
+    // Mantém também integrantes adicionais cadastrados pelo administrador.
+    storedPeopleList.forEach(person => {
+      if (!initialIds.has(String(person.id))) mergedPeople.push(person);
+    });
+    let people = mergedPeople.map(person => ({
       ...person,
       role: ['ADMIN', 'ASSISTANT', 'MEMBER'].includes(person.role) ? person.role : 'MEMBER',
       allowedDays: Array.isArray(person.allowedDays) ? person.allowedDays : [...DEFAULT_DAYS],
+      frequencyByDay: Object.fromEntries(Array.from({ length: 7 }, (_, day) => [day, person.frequencyByDay?.[day] || 'weekly'])),
       secretQuestion: person.secretQuestion || '',
       secretAnswer: person.secretAnswer || ''
     }));
+    // Grava a lista restaurada para que ela permaneça disponível nas próximas aberturas.
+    localStorage.setItem('escalapro_people', JSON.stringify(people));
     // Migração versionada: transfere a administração para VILSON e define a senha inicial 841234.
     // A versão nova força a atualização mesmo em navegadores que já aplicaram a migração anterior.
     if (localStorage.getItem('escalapro_admin_reset_vilson_v2') !== '1') {
@@ -787,6 +885,7 @@
     function saveManualSchedule() {
       if (!requireRole('ADMIN', 'ASSISTANT')) return;
       saveScheduleToStorage();
+      if (document.getElementById('tab-checklist') && !document.getElementById('tab-checklist').classList.contains('hidden')) renderChecklist();
       alert("Programação do mês salva com sucesso no sistema!");
     }
 
@@ -1032,20 +1131,13 @@
             id === newPersonId && !(otherShift === shiftId && slot === index)
           )
         );
-        let monthlyCount = 0;
-        Object.values(scheduleData).forEach(day => Object.values(day || {}).forEach(pair => {
-          if (Array.isArray(pair)) monthlyCount += pair.filter(id => id === newPersonId).length;
-        }));
-        const max = person?.maxMonthly || 3;
-
         if (!person) { alert('Integrante não encontrado.'); renderCalendar(); return; }
         if (newPersonId === otherSlotId) { alert('A mesma pessoa não pode ocupar as duas vagas do mesmo horário.'); renderCalendar(); return; }
         if (alreadyToday) { alert('Este integrante já está escalado em outro horário neste dia.'); renderCalendar(); return; }
-        if (!(person.allowedDays || DEFAULT_DAYS).includes(dayOfWeek)) { alert('Este integrante não está disponível neste dia da semana.'); renderCalendar(); return; }
+        if (!(person.allowedDays || DEFAULT_DAYS).includes(dayOfWeek) || (person.availability && !(person.availability[dayOfWeek] || []).includes(shiftId))) { alert('Este integrante não está disponível neste dia da semana/horário.'); renderCalendar(); return; }
+        if (!isPersonDueOnDate(person, date)) { alert('A frequência configurada para este dia não permite escalar este integrante nesta data.'); renderCalendar(); return; }
         if (person.needsSeats && !shift?.hasSeats) { alert('Este integrante precisa de um local com assento.'); renderCalendar(); return; }
         if (shiftId === 'T1' && isAfternoonBlocked(date)) { alert('Não há programação à tarde neste dia ou feriado.'); renderCalendar(); return; }
-        if (scheduleData[dateStr]?.[shiftId]?.[index] === newPersonId) monthlyCount--;
-        if (monthlyCount >= max) { alert('O limite mensal deste integrante já foi atingido.'); renderCalendar(); return; }
       }
 
       scheduleData[dateStr][shiftId][index] = newPersonId;
@@ -1077,12 +1169,11 @@
             if (shift.id === 'T1' && noAfternoon) return;
 
             const availablePeople = people.filter(p => {
-              const allowed = p.allowedDays ? p.allowedDays.includes(dayOfWeek) : true;
-              const max = p.maxMonthly || 3;
-              const underLimit = counts[p.id] < max;
+              const allowed = (p.allowedDays ? p.allowedDays.includes(dayOfWeek) : true) && (!p.availability || (p.availability[dayOfWeek] || []).includes(shift.id));
+              const dueByFrequency = isPersonDueOnDate(p, date);
               const notAssignedToday = !assignedToday.has(p.id);
               const seatRequirementMet = !p.needsSeats || shift.hasSeats;
-              return allowed && underLimit && notAssignedToday && seatRequirementMet;
+              return allowed && dueByFrequency && notAssignedToday && seatRequirementMet;
             });
 
             const chosenPair = pickBalancedPairByAvailability(availablePeople, counts);
@@ -1178,8 +1269,8 @@
 
           <div class="space-y-1.5 pt-2 border-t border-slate-100 text-xs">
             <div class="flex justify-between text-slate-600">
-              <span>Limite Mensal:</span>
-              <span class="font-semibold text-slate-800">${person.maxMonthly || 3}x no mês</span>
+              <span>Frequência:</span>
+              <span class="font-medium text-brand-700 max-w-[210px] text-right">${DAY_ABBR.map((day, index) => (person.availability?.[index] || []).length ? `${day}: ${frequencyLabel(person.frequencyByDay?.[index] || 'weekly')}` : null).filter(Boolean).join(' · ') || 'Não configurada'}</span>
             </div>
             <div class="flex justify-between text-slate-600">
               <span>Dias Permitidos:</span>
@@ -1203,13 +1294,14 @@
         people: hasRole('ADMIN'),
         stats: hasRole('ADMIN', 'ASSISTANT'),
         messages: hasRole('ADMIN'),
-        portal: Boolean(loggedPerson)
+        portal: Boolean(loggedPerson),
+        checklist: hasRole('ADMIN', 'ASSISTANT')
       };
       if (!allowed[tab]) {
         if (tab !== 'portal') alert('Entre com uma conta autorizada para acessar esta área.');
         tab = 'portal';
       }
-      ['schedule', 'people', 'stats', 'messages', 'portal'].forEach(t => {
+      ['schedule', 'people', 'stats', 'messages', 'portal', 'checklist'].forEach(t => {
         const tabElem = document.getElementById(`tab-${t}`);
         const btnElem = document.getElementById(`tab-btn-${t}`);
         if (tabElem) tabElem.classList.add('hidden');
@@ -1223,6 +1315,52 @@
 
       if (tab === 'stats') renderStats();
       if (tab === 'messages') renderMessagesTab();
+      if (tab === 'checklist') renderChecklist();
+    }
+
+    const WEEKDAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    const SHIFT_IDS = ['M1', 'M2', 'T1'];
+
+    // Frequência recorrente por dia da semana: semanal, semanas alternadas ou primeira ocorrência mensal.
+    function isPersonDueOnDate(person, date) {
+      const day = date.getDay();
+      const settings = person.frequencyByDay || {};
+      const frequency = settings[day] || 'weekly'; // migração: cadastros antigos continuam semanais
+      if (frequency === 'none') return false;
+      if (frequency === 'weekly') return true;
+      if (frequency === 'monthly') return date.getDate() <= 7; // primeira ocorrência daquele dia no mês
+      if (frequency === 'biweekly') {
+        const utcDay = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const mondayOffset = (utcDay.getUTCDay() + 6) % 7;
+        utcDay.setUTCDate(utcDay.getUTCDate() - mondayOffset);
+        const epochMonday = Date.UTC(1970, 0, 5);
+        const weekIndex = Math.floor((utcDay.getTime() - epochMonday) / 604800000);
+        return ((weekIndex % 2) + 2) % 2 === 0;
+      }
+      return true;
+    }
+
+    function frequencyLabel(value) {
+      return ({ weekly: 'Semanal', biweekly: 'Quinzenal', monthly: 'Mensal', none: 'Não escalar' })[value] || 'Semanal';
+    }
+
+    // Mantém a lista de dias compatível com o formato antigo e sincronizada com os três horários.
+    function syncDayAvailability(day) {
+      const anySelected = SHIFT_IDS.some(shiftId => {
+        const input = document.getElementById(`avail-${day}-${shiftId}`);
+        return Boolean(input && input.checked);
+      });
+      const dayInput = document.getElementById(`day-${day}`);
+      if (dayInput) dayInput.checked = anySelected;
+    }
+
+    function setDayAvailability(day, enabled) {
+      SHIFT_IDS.forEach(shiftId => {
+        const input = document.getElementById(`avail-${day}-${shiftId}`);
+        if (input) input.checked = Boolean(enabled);
+      });
+      const dayInput = document.getElementById(`day-${day}`);
+      if (dayInput) dayInput.checked = Boolean(enabled);
     }
 
     function openPersonModal(personId = null) {
@@ -1250,6 +1388,14 @@
           if (deleteBtn) deleteBtn.classList.remove('hidden');
 
           const days = p.allowedDays || DEFAULT_DAYS;
+          const av = p.availability || {};
+          const frequencies = p.frequencyByDay || {};
+          for (let d=0; d<=6; d++) {
+            const freqEl = document.getElementById(`freq-${d}`);
+            if (freqEl) freqEl.value = frequencies[d] || 'weekly';
+            for (const sh of SHIFT_IDS) { const el=document.getElementById(`avail-${d}-${sh}`); if(el) el.checked = Array.isArray(av[d]) ? av[d].includes(sh) : days.includes(d); }
+            syncDayAvailability(d);
+          }
           for (let i = 0; i <= 6; i++) {
             const chk = document.getElementById(`day-${i}`);
             if (chk) chk.checked = days.includes(i);
@@ -1268,6 +1414,9 @@
         for (let i = 0; i <= 6; i++) {
           const chk = document.getElementById(`day-${i}`);
           if (chk) chk.checked = true;
+          const freqEl = document.getElementById(`freq-${i}`);
+          if (freqEl) freqEl.value = 'weekly';
+          for (const sh of SHIFT_IDS) { const el=document.getElementById(`avail-${i}-${sh}`); if(el) el.checked = true; }
         }
       }
 
@@ -1326,9 +1475,16 @@
       const needsSeats = Boolean(document.getElementById('person-needs-seats').checked);
 
       const allowedDays = [];
-      for (let i = 0; i <= 6; i++) {
-        const chk = document.getElementById(`day-${i}`);
-        if (chk && chk.checked) allowedDays.push(i);
+      const availability = {};
+      const frequencyByDay = {};
+      for (let d = 0; d <= 6; d++) {
+        availability[d] = SHIFT_IDS.filter(shiftId => {
+          const input = document.getElementById(`avail-${d}-${shiftId}`);
+          return Boolean(input && input.checked);
+        });
+        const freqInput = document.getElementById(`freq-${d}`);
+        frequencyByDay[d] = freqInput ? freqInput.value : 'weekly';
+        if (availability[d].length > 0 && frequencyByDay[d] !== 'none') allowedDays.push(d);
       }
 
       if (id) {
@@ -1340,10 +1496,10 @@
             alert('O sistema precisa manter pelo menos um administrador.');
             return;
           }
-          people[index] = { ...oldPerson, id, name, phone, maxMonthly, password, role, family, needsSeats, allowedDays, secretQuestion, secretAnswer };
+          people[index] = { ...oldPerson, id, name, phone, maxMonthly, password, role, family, needsSeats, allowedDays, availability, frequencyByDay, secretQuestion, secretAnswer };
         }
       } else {
-        const newPerson = { id: Date.now().toString(), name, phone, maxMonthly, password, role, family, needsSeats, allowedDays, secretQuestion, secretAnswer };
+        const newPerson = { id: Date.now().toString(), name, phone, maxMonthly, password, role, family, needsSeats, allowedDays, availability, frequencyByDay, secretQuestion, secretAnswer };
         people.push(newPerson);
       }
 
@@ -1377,8 +1533,11 @@
 
       sortedPeople.forEach(p => {
         const count = counts[p.id] || 0;
-        const max = p.maxMonthly || 3;
-        const isAtLimit = count >= max;
+        const frequencySummary = DAY_ABBR.map((day, index) => {
+          const hasAvailability = (p.availability?.[index] || []).length > 0;
+          return hasAvailability ? `${day}: ${frequencyLabel(p.frequencyByDay?.[index] || 'weekly')}` : null;
+        }).filter(Boolean).join(' · ');
+        const isAtLimit = false;
 
         const item = document.createElement('div');
         item.className = "flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-brand-300 transition cursor-pointer";
@@ -1390,12 +1549,12 @@
             </span>
             <div>
               <span class="text-xs font-semibold text-slate-800 block">${p.name}</span>
-              <span class="text-[10px] text-slate-400 block font-normal">Máx: ${max}x/mês</span>
+              <span class="text-[10px] text-slate-400 block font-normal">${frequencySummary || 'Sem dias configurados'}</span>
             </div>
           </div>
           <div class="flex items-center gap-2">
             <span class="px-2.5 py-1 rounded-lg text-xs font-bold ${isAtLimit ? 'bg-amber-100 text-amber-800' : 'bg-brand-100 text-brand-800'}">
-              ${count}/${max}
+              ${count} escala(s)
             </span>
             <i class="fa-solid fa-chevron-right text-xs text-slate-400"></i>
           </div>
@@ -1670,33 +1829,90 @@
       const list = document.getElementById('portal-my-shifts-list');
       if (!list || !loggedPerson) return;
       list.innerHTML = '';
-
+      const select = document.getElementById('location-request-shift');
+      if (select) select.innerHTML = '<option value="">Selecione um turno da sua escala</option>';
       let found = 0;
-      Object.keys(scheduleData).forEach(dateStr => {
+      Object.keys(scheduleData).sort().forEach(dateStr => {
         Object.keys(scheduleData[dateStr]).forEach(shiftId => {
           const assigned = scheduleData[dateStr][shiftId];
           if (Array.isArray(assigned) && assigned.includes(loggedPerson.id)) {
             found++;
             const shiftObj = SHIFTS.find(s => s.id === shiftId);
+            const partners = assigned.filter(id => id && id !== loggedPerson.id).map(id => people.find(p => p.id === id)?.name || 'Integrante');
             const dateParts = dateStr.split('-');
             const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-
-            list.innerHTML += `
-              <div class="p-3 bg-brand-50 border border-brand-100 rounded-xl flex justify-between items-center text-xs">
-                <div>
-                  <span class="font-bold text-brand-900">${formattedDate}</span>
-                  <span class="text-slate-500 block">${shiftObj ? shiftObj.name : shiftId} (${shiftObj ? shiftObj.location : ''})</span>
-                </div>
-                <span class="px-2 py-1 bg-brand-600 text-white font-bold rounded-lg text-[10px]">Confirmado</span>
-              </div>
-            `;
+            const location = (scheduleData[dateStr]._locations || {})[shiftId] || (shiftObj ? shiftObj.location : '');
+            const option = document.createElement('option'); option.value = `${dateStr}|${shiftId}`; option.textContent = `${formattedDate} — ${shiftObj ? shiftObj.name : shiftId}`; if(select) select.appendChild(option);
+            list.innerHTML += `<div class="p-3 bg-brand-50 border border-brand-100 rounded-xl flex justify-between items-center text-xs gap-3"><div><span class="font-bold text-brand-900">${formattedDate}</span><span class="text-slate-600 block">${shiftObj ? shiftObj.name : shiftId} · ${location}</span><span class="text-slate-600 block">Parceiro(s): <b>${partners.length ? partners.join(', ') : 'Sem parceiro definido'}</b></span></div><span class="px-2 py-1 bg-brand-600 text-white font-bold rounded-lg text-[10px]">Confirmado</span></div>`;
           }
         });
       });
+      if (found === 0) list.innerHTML = `<p class="text-xs text-slate-400 italic">Nenhuma designação encontrada para você neste mês.</p>`;
+    }
 
-      if (found === 0) {
-        list.innerHTML = `<p class="text-xs text-slate-400 italic">Nenhuma designação encontrada para você neste mês.</p>`;
-      }
+    function submitLocationRequest() {
+      if (!loggedPerson) return;
+      const key = document.getElementById('location-request-shift').value;
+      const place = document.getElementById('location-request-place').value;
+      const other = document.getElementById('location-request-other').value.trim();
+      if (!key) { alert('Selecione um turno da sua escala.'); return; }
+      const [date, shiftId] = key.split('|');
+      const shift = SHIFTS.find(s => s.id === shiftId);
+      const desired = place === 'OUTRO' ? other : place;
+      if (!desired) { alert('Informe o local desejado.'); return; }
+      messages.unshift({ id: Date.now().toString(), senderId: loggedPerson.id, senderName: loggedPerson.name, type: 'TROCA_LOCAL', text: `Solicito alterar o local do turno ${shift ? shift.name : shiftId} do dia ${date.split('-').reverse().join('/')} para: ${desired}.`, date: new Date().toLocaleString('pt-BR'), status: 'PENDING', reply: '', request: { kind: 'LOCATION', date, shiftId, desired } });
+      saveMessagesToStorage(); renderPortalSentMessages(); alert('Solicitação enviada. O local só muda após aprovação do administrador.');
+    }
+
+    function approveLocationRequest(msgId, approve) {
+      if (!requireRole('ADMIN')) return;
+      const msg = messages.find(m => m.id === msgId);
+      if (!msg || !msg.request || msg.request.kind !== 'LOCATION') return;
+      if (approve) {
+        const { date, shiftId, desired } = msg.request;
+        if (!scheduleData[date]) scheduleData[date] = {};
+        if (!scheduleData[date]._locations) scheduleData[date]._locations = {};
+        scheduleData[date]._locations[shiftId] = desired;
+        if (date.startsWith(`${currentYear}-${String(currentMonth+1).padStart(2,'0')}`)) renderCalendar();
+        saveScheduleToStorage(); msg.status = 'RESOLVED'; msg.reply = `Aprovado. Novo local: ${desired}`;
+      } else { msg.status = 'RESOLVED'; msg.reply = 'Solicitação não aprovada pelo administrador.'; }
+      saveMessagesToStorage(); renderMessagesTab(); renderPortalSentMessages();
+      alert(approve ? 'Mudança de local aprovada.' : 'Solicitação recusada.');
+    }
+
+    function sendChecklistWhatsApp(personId) {
+      const person = people.find(p => p.id === personId); if (!person) return;
+      const lines = [];
+      Object.keys(scheduleData).sort().forEach(date => Object.keys(scheduleData[date]).forEach(shiftId => {
+        const arr = scheduleData[date][shiftId]; if (Array.isArray(arr) && arr.includes(personId)) {
+          const sh=SHIFTS.find(x=>x.id===shiftId); const partner=arr.filter(x=>x && x!==personId).map(x=>people.find(p=>p.id===x)?.name||'').filter(Boolean).join(', ') || 'A definir';
+          lines.push(`${date.split('-').reverse().join('/')} — ${sh?.name||shiftId} — Parceiro: ${partner}`);
+        }
+      }));
+      const text = `Olá, ${person.name}! Segue sua escala:\n${lines.join('\n') || 'Nenhum turno neste mês.'}`;
+      const phone=(person.phone||'').replace(/\D/g,''); if(!phone){alert('Este integrante não possui telefone cadastrado.');return;}
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`,'_blank');
+    }
+
+    function saveChecklistCheck(key, checked) {
+      sentChecklist[key] = Boolean(checked);
+      localStorage.setItem('escalapro_sent_checklist', JSON.stringify(sentChecklist));
+    }
+
+    function renderChecklist() {
+      if (!requireRole('ADMIN','ASSISTANT')) return;
+      const root=document.getElementById('checklist-list'); if(!root)return; root.innerHTML='';
+      people.forEach(person=>{
+        const rows=[];
+        Object.keys(scheduleData).sort().forEach(date=>Object.keys(scheduleData[date]).forEach(shiftId=>{
+          const arr=scheduleData[date][shiftId]; if(Array.isArray(arr)&&arr.includes(person.id)) { const sh=SHIFTS.find(x=>x.id===shiftId); const partner=arr.filter(x=>x&&x!==person.id).map(x=>people.find(p=>p.id===x)?.name||'').filter(Boolean).join(', ')||'A definir'; const loc=(scheduleData[date]._locations||{})[shiftId] || sh?.location || ''; rows.push({key:`${person.id}_${date}_${shiftId}`, label:`${date.split('-').reverse().join('/')} · ${sh?.name||shiftId} · ${loc} · ${partner}`}); }
+        }));
+        if(!rows.length)return;
+        const id=`check-${person.id}`; const card=document.createElement('div'); card.className='bg-white rounded-xl border border-slate-200 p-4 space-y-2';
+        card.innerHTML=`<div class="flex justify-between gap-2"><div><b class="text-sm text-slate-800">${person.name}</b><p class="text-[11px] text-slate-500">${rows.length} designação(ões) · ${person.phone||'Sem telefone'}</p></div><button onclick="sendChecklistWhatsApp('${person.id}')" class="h-fit px-3 py-2 bg-emerald-600 text-white rounded-lg text-xs"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button></div><div class="space-y-1">${rows.map(r=>`<label class="flex gap-2 items-start text-xs text-slate-700"><input type="checkbox" class="mt-0.5" ${sentChecklist[r.key] ? 'checked' : ''} onchange="saveChecklistCheck('${r.key}',this.checked)"> <span>${r.label}</span></label>`).join('')}</div>`;
+        root.appendChild(card);
+      });
+      if(!root.children.length) root.innerHTML='<div class="bg-white p-6 rounded-xl text-sm text-slate-500">Nenhuma designação encontrada neste mês.</div>';
     }
 
     function shareMyOwnScheduleWhatsApp() {
@@ -1805,6 +2021,7 @@
           </div>
 
           <p class="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200">${m.text}</p>
+          ${m.request && m.request.kind === 'LOCATION' && m.status !== 'RESOLVED' ? `<div class="flex gap-2"><button onclick="approveLocationRequest('${m.id}',true)" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold">Aprovar mudança</button><button onclick="approveLocationRequest('${m.id}',false)" class="px-3 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-semibold">Recusar</button></div>` : ''}
 
           <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
             <input type="text" id="reply-input-${m.id}" value="${m.reply || ''}" placeholder="Escrever resposta..." class="flex-1 px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-500">
@@ -1914,5 +2131,6 @@
       html2pdf().set(opt).from(target).save();
     }
   </script>
+<!-- EscalaPro atualizado: checklist, parceiro, solicitação/aprovação de local e disponibilidade por turno/dia -->
 </body>
 </html>
