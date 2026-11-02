@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="application-name" content="EscalaPro">
-  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkVzY2FsYVBybyAyLjAiLAogICJzaG9ydF9uYW1lIjogIkVzY2FsYVBybyIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMGYxNzJhIiwKICAidGhlbWVfY29sb3IiOiAiIzBmMTcyYSIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImh0dHBzOi8vY2RuLWljb25zLXBuZy5mbGF0aWNvbi5jb20vNTEyLzM2NTIvMzY1MiI3OS5wbmciLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgIH0KICBdCn0=">
+  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkVzY2FsYVBybyAyLjAiLAogICJzaG9ydF9uYW1lIjogIkVzY2FsYVBybyIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF_jb2xvciI6ICIjMGYxNzJhIiwKICAidGhlbWVfY29sb3IiOiAiIzBmMTcyYSIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImh0dHBzOi8vY2RuLWljb25zLXBuZy5mbGF0aWNvbi5jb20vNTEyLzM2NTIvMzY1MiI3OS5wbmciLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgIH0KICBdCn0=">
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -49,6 +49,7 @@
     .day-weekday { background-color: #ffffff; border-color: #e2e8f0; }
     .day-saturday { background-color: #fffbe6; border-color: #fef08a; }
     .day-sunday { background-color: #fef2f2; border-color: #fecaca; }
+    .day-tuesday { background-color: #f8fafc; border-color: #e2e8f0; }
     .day-holiday { background-color: #fdf2f8 !important; border-color: #fbcfe8 !important; }
 
     /* Print styles tailored for single-page A4 output */
@@ -162,10 +163,14 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          <button onclick="generateSchedule()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition shadow-sm flex items-center gap-2">
+          <button onclick="generateSchedule()" class="bg-brand-600 hover:bg-brand-700 text-white px-3.5 py-2 rounded-xl text-sm font-semibold transition shadow-sm flex items-center gap-2">
             <i class="fa-solid fa-rotate"></i> <span>Gerar Escala</span>
           </button>
           
+          <button onclick="saveManualSchedule()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-sm font-semibold transition shadow-sm flex items-center gap-2" title="Salvar programação do mês no sistema">
+            <i class="fa-solid fa-floppy-disk"></i> <span>Salvar Mês</span>
+          </button>
+
           <div class="h-6 w-[1px] bg-slate-200 mx-1 hidden sm:block"></div>
 
           <button onclick="openMassWhatsAppModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-sm font-semibold transition shadow-sm flex items-center gap-2" title="Painel de Envio de Escalas por WhatsApp">
@@ -186,50 +191,38 @@
         </div>
       </div>
 
-      <!-- Season & Weather Forecast Banner -->
-      <div id="season-weather-banner" class="no-print bg-gradient-to-r from-amber-500/10 via-sky-500/10 to-indigo-500/10 border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div class="flex items-center gap-3">
-          <div id="season-icon-container" class="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-xl shadow-sm">
-            <i class="fa-solid fa-sun"></i>
-          </div>
-          <div>
-            <h3 id="season-title" class="font-bold text-slate-800 text-sm">Estação do Ano: Outono</h3>
-            <p id="season-description" class="text-xs text-slate-500">Clima ameno e dias de sol moderado</p>
-          </div>
-        </div>
-
-        <div class="w-full md:w-auto grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-          <div class="bg-white/80 p-2 rounded-xl border border-slate-200/60 text-center">
-            <span class="block text-[10px] text-slate-400 font-medium">Semana 1</span>
-            <span id="weather-w1" class="font-semibold text-slate-700"><i class="fa-solid fa-sun text-amber-500"></i> Sol 24°C</span>
-          </div>
-          <div class="bg-white/80 p-2 rounded-xl border border-slate-200/60 text-center">
-            <span class="block text-[10px] text-slate-400 font-medium">Semana 2</span>
-            <span id="weather-w2" class="font-semibold text-slate-700"><i class="fa-solid fa-cloud-sun text-sky-500"></i> Parcial 22°C</span>
-          </div>
-          <div class="bg-white/80 p-2 rounded-xl border border-slate-200/60 text-center">
-            <span class="block text-[10px] text-slate-400 font-medium">Semana 3</span>
-            <span id="weather-w3" class="font-semibold text-slate-700"><i class="fa-solid fa-cloud-rain text-blue-500"></i> Chuva 19°C</span>
-          </div>
-          <div class="bg-white/80 p-2 rounded-xl border border-slate-200/60 text-center">
-            <span class="block text-[10px] text-slate-400 font-medium">Semana 4</span>
-            <span id="weather-w4" class="font-semibold text-slate-700"><i class="fa-solid fa-wind text-slate-500"></i> Vento 20°C</span>
-          </div>
-        </div>
-      </div>
-
       <!-- Schedule Legend & Rules Bar -->
       <div class="no-print bg-blue-50 border border-blue-200/60 rounded-xl p-3 text-xs text-blue-900 flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-4">
-          <span class="flex items-center gap-1.5 font-bold"><i class="fa-solid fa-shield-halved text-brand-600"></i> Regras Gerais:</span>
-          <span class="flex items-center gap-1"><i class="fa-solid fa-calendar-check text-emerald-600"></i> Disponibilidade nos dias da semana</span>
-          <span class="flex items-center gap-1"><i class="fa-solid fa-ban text-rose-500"></i> Tarde/Noite indisponíveis em Ter, Sáb, Dom e Feriados</span>
+          <span class="flex items-center gap-1.5 font-bold"><i class="fa-solid fa-shield-halved text-brand-600"></i> Regras de Horários:</span>
+          <span class="flex items-center gap-1"><i class="fa-solid fa-sun text-amber-600"></i> Manhãs (07h-09h | 09h-11h): Todos os dias</span>
+          <span class="flex items-center gap-1 text-slate-700"><i class="fa-solid fa-cloud-moon text-indigo-600"></i> Tarde (16h-18h): Apenas Seg, Qua, Qui, Sex</span>
+          <span class="flex items-center gap-1 text-rose-600 font-semibold"><i class="fa-solid fa-ban text-rose-500"></i> Ter, Sáb, Dom e Feriados SEM Tarde</span>
         </div>
         <div class="flex items-center gap-2 text-[11px] font-medium">
-          <span class="px-2 py-0.5 rounded bg-white border border-slate-200">Seg-Sex</span>
-          <span class="px-2 py-0.5 rounded bg-amber-100 border border-amber-300 text-amber-900">Sábado</span>
-          <span class="px-2 py-0.5 rounded bg-rose-100 border border-rose-300 text-rose-900">Domingo</span>
+          <span class="px-2 py-0.5 rounded bg-white border border-slate-200">Completo</span>
+          <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">Apenas Manhã</span>
           <span class="px-2 py-0.5 rounded bg-pink-200 border border-pink-400 text-pink-900 font-bold">Feriado</span>
+        </div>
+      </div>
+
+      <!-- BANNER / IMAGEM DE CAPA DA ESCALA (PADRÃO WHATSAPP 1080x1080) -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 no-print space-y-3">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold text-slate-700 flex items-center gap-2">
+            <i class="fa-solid fa-image text-brand-600"></i> Foto de Capa / Card da Escala (Formato Quadrado / WhatsApp 1:1)
+          </span>
+          <label class="cursor-pointer bg-brand-50 hover:bg-brand-100 text-brand-700 px-3 py-1 rounded-xl text-xs font-semibold border border-brand-200 transition">
+            <i class="fa-solid fa-upload mr-1"></i> Adicionar Foto
+            <input type="file" id="cover-image-input" accept="image/*" class="hidden" onchange="handleCoverImageUpload(event)">
+          </label>
+        </div>
+
+        <div id="cover-preview-container" class="hidden relative max-w-xs mx-auto rounded-xl overflow-hidden border border-slate-200 shadow-sm aspect-square bg-slate-50 flex items-center justify-center">
+          <img id="cover-preview-img" src="" alt="Capa da Escala" class="w-full h-full object-cover">
+          <button onclick="removeCoverImage()" class="absolute top-2 right-2 bg-rose-600 text-white w-7 h-7 rounded-full flex items-center justify-center shadow hover:bg-rose-700 transition" title="Remover Foto">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
       </div>
 
@@ -243,7 +236,7 @@
           <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
             <i class="fa-regular fa-calendar text-brand-600"></i> Calendário do Mês (Grade A4 Dinâmica)
           </h2>
-          <span class="text-xs text-slate-400 font-medium">Mude para o modo Manual para fazer substituições diretas</span>
+          <span class="text-xs text-slate-400 font-medium">Mude para o modo Manual para fazer substituições e clique em "Salvar Mês"</span>
         </div>
 
         <div id="calendar-days-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3"></div>
@@ -315,7 +308,7 @@
       </div>
     </div>
 
-    <!-- TAB 4: MÓDULO DE CENTRAL DE MENSAGENS (ORGANIZADOR) -->
+    <!-- TAB 4: MÓDULO DE CENTRAL DE MENSAGENS -->
     <div id="tab-messages" class="hidden space-y-6">
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -457,7 +450,7 @@
     </div>
   </div>
 
-  <!-- MODAL: ENVIO EM MASSA VIA WHATSAPP -->
+  <!-- MODAL: ENVIO EM MASSA VIA WHATSAPP COM CHECKLIST -->
   <div id="mass-whatsapp-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 overflow-y-auto">
     <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden border border-slate-100">
       <div class="bg-brand-900 text-white px-5 py-4 flex justify-between items-center">
@@ -465,7 +458,7 @@
           <h3 class="font-bold text-base flex items-center gap-2">
             <i class="fa-brands fa-whatsapp text-emerald-400 text-lg"></i> Enviar Escalas Individuais em Massa
           </h3>
-          <p class="text-xs text-slate-300">Dispare a escala diretamente no WhatsApp de cada integrante escalado no mês</p>
+          <p class="text-xs text-slate-300">Dispare a escala no WhatsApp de cada integrante e marque no checklist</p>
         </div>
         <button onclick="closeMassWhatsAppModal()" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
@@ -473,7 +466,7 @@
       <div class="p-5 space-y-4">
         <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900 flex justify-between items-center">
           <span>Integrantes Escalados neste mês: <strong id="mass-total-count">0</strong></span>
-          <span class="text-[10px] bg-white px-2 py-0.5 rounded border border-emerald-300">WhatsApp Web Ready</span>
+          <span class="text-[10px] bg-white px-2 py-0.5 rounded border border-emerald-300">Checklist Ativo</span>
         </div>
 
         <div id="mass-whatsapp-list" class="space-y-2 max-h-96 overflow-y-auto pr-1"></div>
@@ -623,11 +616,11 @@
       { id: '44', name: 'BEATRIZ', phone: '+55(11)92222-4444', maxMonthly: 2, family: '', needsSeats: false, allowedDays: [...DEFAULT_DAYS], password: '123' }
     ];
 
+    // SHIFTS CONFIGURATION (07-09 AM, 09-11 AM, 16-18 PM)
     const SHIFTS = [
-      { id: 'M1', name: 'Manhã 1 (07:00 às 09:00)', location: 'PRAÇA', hasSeats: true },
-      { id: 'M2', name: 'Manhã 2 (09:00 às 11:00)', location: 'DROGASIL / JAPONÊS', hasSeats: true },
-      { id: 'T1', name: 'Tarde (16:00 às 18:00)', location: 'REAL MIX / PRÉDIOS', hasSeats: false },
-      { id: 'N1', name: 'Noite', location: 'PRAÇA / DROGASIL', hasSeats: true }
+      { id: 'M1', name: '07:00 às 09:00 AM', location: 'PRAÇA', hasSeats: true },
+      { id: 'M2', name: '09:00 às 11:00 AM', location: 'DROGASIL / JAPONÊS', hasSeats: true },
+      { id: 'T1', name: '16:00 às 18:00 PM', location: 'REAL MIX / PRÉDIOS', hasSeats: false }
     ];
 
     const DAY_ABBR = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -641,18 +634,25 @@
     let loggedPerson = null;
     let activeIndividualPersonId = null;
     let messages = JSON.parse(localStorage.getItem('escalapro_messages')) || [];
+    let sentChecklist = JSON.parse(localStorage.getItem('escalapro_sent_checklist')) || {};
 
     window.onload = function() {
       savePeopleToStorage();
       loadScheduleFromStorage();
       renderPeopleCards();
-      generateSchedule();
+      
+      if (!scheduleData || Object.keys(scheduleData).length === 0) {
+        generateSchedule();
+      } else {
+        renderCalendar();
+        renderStats();
+      }
+
       updateHeaderMonthDisplay();
       populatePortalDropdown();
-      updateSeasonAndWeather();
       updateUnreadBadge();
+      loadSavedCoverImage();
 
-      // Service Worker registration for PWA
       if ('serviceWorker' in navigator) {
         const swCode = `
           self.addEventListener('install', e => e.waitUntil(self.skipWaiting()));
@@ -675,6 +675,11 @@
       localStorage.setItem(key, JSON.stringify(scheduleData));
     }
 
+    function saveManualSchedule() {
+      saveScheduleToStorage();
+      alert("Programação do mês salva com sucesso no sistema!");
+    }
+
     function loadScheduleFromStorage() {
       const key = `escalapro_schedule_${currentYear}_${currentMonth}`;
       const stored = localStorage.getItem(key);
@@ -686,9 +691,14 @@
       if (currentMonth < 0) { currentMonth = 11; currentYear--; } 
       else if (currentMonth > 11) { currentMonth = 0; currentYear++; }
       updateHeaderMonthDisplay();
-      updateSeasonAndWeather();
       loadScheduleFromStorage();
-      generateSchedule();
+      
+      if (!scheduleData || Object.keys(scheduleData).length === 0) {
+        generateSchedule();
+      } else {
+        renderCalendar();
+        renderStats();
+      }
     }
 
     function updateHeaderMonthDisplay() {
@@ -726,50 +736,44 @@
       return HOLIDAYS.includes(`${mm}-${dd}`);
     }
 
-    function isAfternoonOrNightBlocked(date) {
+    // REGRA: A TARDE NÃO TEM PROGRAMAÇÃO EM TERÇAS, SÁBADOS, DOMINGOS E FERIADOS
+    function isAfternoonBlocked(date) {
       const dayOfWeek = date.getDay();
       return dayOfWeek === 2 || dayOfWeek === 6 || dayOfWeek === 0 || isHoliday(date);
     }
 
-    function updateSeasonAndWeather() {
-      const m = currentMonth + 1;
-      let season = "Outono";
-      let desc = "Temperaturas amenas e clima agradável";
-      let icon = '<i class="fa-solid fa-leaf"></i>';
-      let iconBg = "bg-amber-500";
-
-      if (m >= 12 || m <= 2) {
-        season = "Verão";
-        desc = "Dias quentes e pancadas de chuva no final da tarde";
-        icon = '<i class="fa-solid fa-sun"></i>';
-        iconBg = "bg-amber-500";
-      } else if (m >= 3 && m <= 5) {
-        season = "Outono";
-        desc = "Clima ameno e redução gradual de chuvas";
-        icon = '<i class="fa-solid fa-wind"></i>';
-        iconBg = "bg-orange-500";
-      } else if (m >= 6 && m <= 8) {
-        season = "Inverno";
-        desc = "Temperaturas mais frias e tempo seco";
-        icon = '<i class="fa-solid fa-snowflake"></i>';
-        iconBg = "bg-sky-600";
-      } else {
-        season = "Primavera";
-        desc = "Clima agradável e florescimento das plantas";
-        icon = '<i class="fa-solid fa-seedling"></i>';
-        iconBg = "bg-emerald-500";
+    /* UPLOAD E CONTROLE DA FOTO DE CAPA DA ESCALA */
+    function handleCoverImageUpload(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const imgData = evt.target.result;
+          localStorage.setItem('escalapro_cover_image', imgData);
+          displayCoverImage(imgData);
+        };
+        reader.readAsDataURL(file);
       }
+    }
 
-      const titleElem = document.getElementById('season-title');
-      const descElem = document.getElementById('season-description');
-      const container = document.getElementById('season-icon-container');
-
-      if (titleElem) titleElem.textContent = `Estação do Ano: ${season}`;
-      if (descElem) descElem.textContent = desc;
-      if (container) {
-        container.className = `w-12 h-12 rounded-2xl text-white flex items-center justify-center text-xl shadow-sm ${iconBg}`;
-        container.innerHTML = icon;
+    function displayCoverImage(src) {
+      const img = document.getElementById('cover-preview-img');
+      const container = document.getElementById('cover-preview-container');
+      if (img && container) {
+        img.src = src;
+        container.classList.remove('hidden');
       }
+    }
+
+    function removeCoverImage() {
+      localStorage.removeItem('escalapro_cover_image');
+      const container = document.getElementById('cover-preview-container');
+      if (container) container.classList.add('hidden');
+    }
+
+    function loadSavedCoverImage() {
+      const saved = localStorage.getItem('escalapro_cover_image');
+      if (saved) displayCoverImage(saved);
     }
 
     function saveMessagesToStorage() {
@@ -803,7 +807,7 @@
         const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         const dayOfWeek = date.getDay();
         const holidayFlag = isHoliday(date);
-        const afternoonBlocked = isAfternoonOrNightBlocked(date);
+        const noAfternoon = isAfternoonBlocked(date);
 
         const dailyAssignedMap = {};
         if (scheduleData[dateStr]) {
@@ -818,6 +822,7 @@
 
         let cardBgClass = "day-weekday";
         if (holidayFlag) cardBgClass = "day-holiday";
+        else if (dayOfWeek === 2) cardBgClass = "day-tuesday";
         else if (dayOfWeek === 6) cardBgClass = "day-saturday";
         else if (dayOfWeek === 0) cardBgClass = "day-sunday";
 
@@ -827,12 +832,12 @@
         let shiftsHTML = '';
 
         SHIFTS.forEach(shift => {
-          const isBlocked = (shift.id === 'T1' || shift.id === 'N1') && afternoonBlocked;
+          const isShiftBlocked = shift.id === 'T1' && noAfternoon;
 
-          if (isBlocked) {
+          if (isShiftBlocked) {
             shiftsHTML += `
               <div class="shift-card p-1.5 bg-slate-100/80 rounded-lg text-[10px] text-slate-400 border border-dashed border-slate-200 flex justify-between items-center">
-                <span>${shift.name.split(' ')[0]} (Sem Escala)</span>
+                <span>16:00 às 18:00 (Sem Escala)</span>
                 <i class="fa-solid fa-ban text-slate-300"></i>
               </div>
             `;
@@ -861,9 +866,9 @@
 
           shiftsHTML += `
             <div class="shift-card p-2 rounded-lg shadow-xs border transition-all ${hasDuplicateAlert ? 'bg-rose-50 border-rose-400 ring-1 ring-rose-300' : 'bg-white/90 border-slate-200'} space-y-1">
-              <div class="flex justify-between items-center text-[11px] font-bold text-brand-800">
-                <span>${shift.name.split(' ')[0]}</span>
-                <span class="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-medium">${shift.location}</span>
+              <div class="flex justify-between items-center text-[10px] font-bold text-brand-800">
+                <span>${shift.name}</span>
+                <span class="text-[9px] bg-slate-100 px-1 py-0.5 rounded text-slate-500 font-medium">${shift.location}</span>
               </div>
 
               ${hasDuplicateAlert ? `
@@ -889,7 +894,7 @@
             <span class="font-bold text-slate-800 text-xs">Dia ${d} <span class="text-[10px] font-normal text-slate-500">(${DAY_ABBR[dayOfWeek]})</span></span>
             ${holidayFlag ? '<span class="text-[9px] font-extrabold bg-pink-500 text-white px-1.5 py-0.5 rounded shadow-xs">FERIADO</span>' : ''}
           </div>
-          <div class="space-y-1.5 flex-1">${shiftsHTML}</div>
+          <div class="space-y-1.5 flex-1 flex flex-col justify-center">${shiftsHTML}</div>
         `;
 
         container.appendChild(card);
@@ -927,10 +932,10 @@
           scheduleData[dateStr] = {};
 
           const assignedToday = new Set();
-          const afternoonBlocked = isAfternoonOrNightBlocked(date);
+          const noAfternoon = isAfternoonBlocked(date);
 
           SHIFTS.forEach(shift => {
-            if ((shift.id === 'T1' || shift.id === 'N1') && afternoonBlocked) return;
+            if (shift.id === 'T1' && noAfternoon) return;
 
             const availablePeople = people.filter(p => {
               const allowed = p.allowedDays ? p.allowedDays.includes(dayOfWeek) : true;
@@ -1295,7 +1300,7 @@
         msg += `Não foram encontradas designações em seu nome neste mês.\n`;
       } else {
         userShifts.forEach(item => {
-          msg += `📌 *Data:* ${item.formattedDate}\n• Turno: ${item.shiftObj ? item.shiftObj.name : ''}\n• Local: ${item.shiftObj ? item.shiftObj.location : ''}\n\n`;
+          msg += `📌 *Data:* ${item.formattedDate}\n• Horário: ${item.shiftObj ? item.shiftObj.name : ''}\n• Local: ${item.shiftObj ? item.shiftObj.location : ''}\n\n`;
         });
       }
 
@@ -1304,15 +1309,17 @@
       const encoded = encodeURIComponent(msg);
       const cleanPhone = person.phone.replace(/\D/g, '');
       const url = cleanPhone ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encoded}` : `https://api.whatsapp.com/send?text=${encoded}`;
+      
+      toggleChecklistStatus(person.id, true);
       window.open(url, '_blank');
     }
 
+    /* MODAL WHATSAPP COM CHECKLIST DE ENVIADO */
     function openMassWhatsAppModal() {
       const list = document.getElementById('mass-whatsapp-list');
       if (!list) return;
       list.innerHTML = '';
 
-      const monthDisplay = document.getElementById('current-month-display').textContent;
       const scheduledMap = {};
 
       Object.keys(scheduleData).forEach(dateStr => {
@@ -1339,25 +1346,46 @@
         if (!p) return;
 
         const shifts = scheduledMap[pId];
+        const isSent = Boolean(sentChecklist[pId]);
 
         const item = document.createElement('div');
-        item.className = "p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2";
+        item.className = `p-3 rounded-xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 transition ${isSent ? 'bg-emerald-50/80 border-emerald-300' : 'bg-slate-50 border-slate-200'}`;
+        item.id = `mass-item-${p.id}`;
+        
         item.innerHTML = `
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="font-bold text-xs text-slate-800">${p.name}</span>
-              <span class="text-[10px] bg-brand-100 text-brand-800 font-bold px-1.5 py-0.5 rounded">${shifts.length}x no mês</span>
+          <div class="flex items-center gap-3">
+            <input type="checkbox" id="chk-sent-${p.id}" ${isSent ? 'checked' : ''} onchange="toggleChecklistStatus('${p.id}', this.checked)" class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-xs text-slate-800 ${isSent ? 'line-through text-slate-500' : ''}">${p.name}</span>
+                <span class="text-[10px] bg-brand-100 text-brand-800 font-bold px-1.5 py-0.5 rounded">${shifts.length}x no mês</span>
+                ${isSent ? '<span class="text-[9px] bg-emerald-600 text-white font-bold px-1.5 py-0.2 rounded"><i class="fa-solid fa-check mr-1"></i>Enviado</span>' : ''}
+              </div>
+              <p class="text-[10px] text-slate-500">${p.phone}</p>
             </div>
-            <p class="text-[10px] text-slate-500">${p.phone}</p>
           </div>
-          <button onclick="sendIndividualWhatsAppFromMass('${p.id}')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition flex items-center gap-1.5 whitespace-nowrap">
-            <i class="fa-brands fa-whatsapp text-sm"></i> Enviar Escala
+          <button onclick="sendIndividualWhatsAppFromMass('${p.id}')" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${isSent ? 'bg-slate-600 hover:bg-slate-700' : 'bg-emerald-600 hover:bg-emerald-700'} text-white transition flex items-center gap-1.5 whitespace-nowrap">
+            <i class="fa-brands fa-whatsapp text-sm"></i> ${isSent ? 'Reenviar' : 'Enviar Escala'}
           </button>
         `;
         list.appendChild(item);
       });
 
       document.getElementById('mass-whatsapp-modal').classList.remove('hidden');
+    }
+
+    function toggleChecklistStatus(personId, isChecked) {
+      sentChecklist[personId] = isChecked;
+      localStorage.setItem('escalapro_sent_checklist', JSON.stringify(sentChecklist));
+      
+      const item = document.getElementById(`mass-item-${personId}`);
+      if (item) {
+        if (isChecked) {
+          item.className = "p-3 rounded-xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 transition bg-emerald-50/80 border-emerald-300";
+        } else {
+          item.className = "p-3 rounded-xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 transition bg-slate-50 border-slate-200";
+        }
+      }
     }
 
     function closeMassWhatsAppModal() {
@@ -1634,7 +1662,7 @@
               const p1 = people.find(p => p.id === assignedIds[0]);
               const p2 = people.find(p => p.id === assignedIds[1]);
               const names = [p1 ? p1.name : '', p2 ? p2.name : ''].filter(Boolean).join(' e ');
-              if (names) message += `  • ${shift.name.split(' ')[0]} | ${shift.location}: ${names}\n`;
+              if (names) message += `   • ${shift.name} | ${shift.location}: ${names}\n`;
             }
           });
           message += `\n`;
@@ -1662,6 +1690,3 @@
   </script>
 </body>
 </html>
-```
-
-All syntax and configuration errors are resolved. Let me know if you would like any further adjustments!
