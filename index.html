@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="application-name" content="EscalaPro">
-  <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIkVzY2FsYVBybyAyLjAiLAogICJzaG9ydF9uYW1lIjogIkVzY2FsYVBybyIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMGYxNzJhIiwKICAidGhlbWVfY29sb3IiOiAiIzBmMTcyYSIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImh0dHBzOi8vY2RuLWljb25zLXBuZy5mbGF0aWNvbi5jb20vNTEyLzM2NTIvMzY1Mi5wbmciLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgIH0KICBdCn0=">
+  <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIkVzY2FsYVBybyAyLjAiLCAic2hvcnRfbmFtZSI6ICJFc2NhbGFQcm8iLCAic3RhcnRfdXJsIjogIi4iLCAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwgImJhY2tncm91bmRfY29sb3IiOiAiIzBmMTcyYSIsICJ0aGVtZV9jb2xvciI6ICIjMGYxNzJhIn0=">
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -72,7 +72,8 @@
       #calendar-days-container {
         display: grid !important;
         grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
-        gap: 3px !important;
+        min-width: 0 !important;
+        gap: 2px !important;
       }
       .day-card {
         padding: 3px !important;
@@ -95,6 +96,38 @@
     }
     .print-only { display: none; }
     
+
+    /* Calendário mensal em grade de domingo a sábado */
+    .calendar-scroll { width: 100%; overflow-x: auto; }
+    #calendar-days-container { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); min-width: 980px; gap: 6px; }
+    .calendar-weekday { padding: 8px 4px; text-align: center; border-radius: 8px; color: #fff; background: #164e63; font-size: 10px; font-weight: 800; letter-spacing: .06em; }
+    .calendar-weekday:first-child { background: #991b1b; }
+    .calendar-weekday:last-child { background: #a16207; }
+    .calendar-empty { min-height: 18px; border-radius: 8px; background: #f8fafc; border: 1px dashed #e2e8f0; }
+    .day-card { min-height: 158px; padding: 7px !important; border-radius: 10px !important; gap: 6px !important; box-shadow: 0 1px 3px rgba(15,23,42,.08); }
+    .day-card .shift-card { padding: 6px !important; border-radius: 7px !important; }
+    .shift-card.shift-m1 { background: #eff6ff !important; border-color: #93c5fd !important; }
+    .shift-card.shift-m2 { background: #fffbeb !important; border-color: #fcd34d !important; }
+    .shift-card.shift-t1 { background: #ecfdf5 !important; border-color: #86efac !important; }
+    .shift-person-name { display: block; font-size: 10px; line-height: 1.25; font-weight: 800; color: #1e293b; overflow-wrap: anywhere; }
+    .shift-person-empty { color: #94a3b8; font-size: 9px; font-style: italic; }
+    .day-card.day-sunday { background: #fff1f2; border-color: #fda4af; }
+    .day-card.day-saturday { background: #fffbeb; border-color: #fcd34d; }
+    .day-card.day-holiday { background: #fdf2f8 !important; border-color: #f9a8d4 !important; }
+    .cart-illustration { display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#eff6ff,#ecfdf5); border:1px solid #bfdbfe; border-radius:14px; padding:3px 8px; }
+    @media (max-width: 640px) { .calendar-scroll { padding-bottom: 8px; } }
+    @media print {
+      .calendar-scroll { overflow: visible !important; }
+      #calendar-days-container { min-width: 0 !important; grid-template-columns: repeat(7,minmax(0,1fr)) !important; gap: 2px !important; }
+      .calendar-weekday { padding: 3px 1px !important; font-size: 6pt !important; }
+      .calendar-empty { min-height: 0 !important; border: 0 !important; }
+      .day-card { min-height: 112px !important; padding: 3px !important; font-size: 6pt !important; }
+      .day-card .shift-card { padding: 2px !important; margin-top: 2px !important; }
+      .shift-person-name { font-size: 6pt !important; }
+      .calendar-legend { font-size: 6pt !important; }
+      .cart-illustration svg { width: 90px !important; height: 56px !important; }
+    }
+
     /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
@@ -235,14 +268,44 @@
       </div>
 
       <div id="schedule-export-target" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 sm:p-6 space-y-4">
-        <div class="flex justify-between items-center pb-3 border-b border-slate-100 no-print">
-          <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <i class="fa-regular fa-calendar text-brand-600"></i> Calendário do Mês (Grade A4 Dinâmica)
-          </h2>
-          <span class="text-xs text-slate-400 font-medium">Mude para o modo Manual para fazer substituições e clique em "Salvar Mês"</span>
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-3 pb-3 border-b border-slate-100">
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-800 flex items-center gap-2">
+              <i class="fa-regular fa-calendar text-brand-600"></i> Programação do Carrinho
+            </h2>
+            <p id="calendar-month-subtitle" class="text-xs text-slate-500 font-semibold mt-1">Programação mensal de campo</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="cart-illustration" role="img" aria-label="Ilustração de carrinho de publicações">
+              <svg viewBox="0 0 180 112" width="150" height="94" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M18 18h17l13 58h91l13-42H43" fill="none" stroke="#334155" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M54 40h87l-8 28H60z" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+                <rect x="61" y="25" width="22" height="42" rx="3" fill="#2563eb" stroke="#1e40af" stroke-width="2"/>
+                <rect x="86" y="18" width="23" height="49" rx="3" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+                <rect x="112" y="30" width="22" height="37" rx="3" fill="#16a34a" stroke="#166534" stroke-width="2"/>
+                <path d="M67 33h10M92 27h11M118 38h10" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="66" cy="87" r="9" fill="#334155"/><circle cx="66" cy="87" r="4" fill="#e2e8f0"/>
+                <circle cx="132" cy="87" r="9" fill="#334155"/><circle cx="132" cy="87" r="4" fill="#e2e8f0"/>
+                <path d="M43 76h107" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+                <path d="M21 15h15" stroke="#0f172a" stroke-width="5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="hidden sm:block text-right">
+              <div class="text-[10px] font-extrabold uppercase tracking-wider text-sky-700">Organização • Participação • Serviço</div>
+              <div class="text-[10px] text-slate-500">Programação mensal</div>
+            </div>
+          </div>
         </div>
 
-        <div id="calendar-days-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3"></div>
+        <div class="calendar-scroll overflow-x-auto">
+          <div id="calendar-days-container" class="grid gap-2"></div>
+        </div>
+        <div class="flex flex-wrap gap-2 pt-2 text-[10px] font-semibold text-slate-600 calendar-legend">
+          <span class="rounded-full bg-sky-100 text-sky-800 px-2 py-1">PRAÇA</span>
+          <span class="rounded-full bg-amber-100 text-amber-800 px-2 py-1">DROGASIL / JAPONÊS</span>
+          <span class="rounded-full bg-emerald-100 text-emerald-800 px-2 py-1">REAL MIX / PRÉDIOS</span>
+          <span class="rounded-full bg-rose-100 text-rose-800 px-2 py-1">Feriado / Assembleia</span>
+        </div>
       </div>
     </div>
 
@@ -1006,6 +1069,26 @@
       const container = document.getElementById('calendar-days-container');
       if (!container) return;
       container.innerHTML = '';
+      container.style.gridTemplateColumns = 'repeat(7, minmax(0, 1fr))';
+      const monthTitle = new Date(currentYear, currentMonth, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      const subtitle = document.getElementById('calendar-month-subtitle');
+      if (subtitle) subtitle.textContent = `Programação do Carrinho — ${monthTitle.charAt(0).toUpperCase() + monthTitle.slice(1)}`;
+
+      const weekdayNames = ['DOMINGO', 'SEGUNDA', 'TERÇA', 'QUARTA', 'QUINTA', 'SEXTA', 'SÁBADO'];
+      weekdayNames.forEach(name => {
+        const heading = document.createElement('div');
+        heading.className = 'calendar-weekday';
+        heading.textContent = name;
+        container.appendChild(heading);
+      });
+
+      const firstWeekday = new Date(currentYear, currentMonth, 1).getDay();
+      for (let blank = 0; blank < firstWeekday; blank++) {
+        const empty = document.createElement('div');
+        empty.className = 'calendar-empty';
+        empty.setAttribute('aria-hidden', 'true');
+        container.appendChild(empty);
+      }
 
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
       let totalSlots = 0;
@@ -1017,98 +1100,74 @@
         const dayOfWeek = date.getDay();
         const holidayFlag = isHoliday(date);
         const noAfternoon = isAfternoonBlocked(date);
-
         const dailyAssignedMap = {};
         if (scheduleData[dateStr]) {
           Object.values(scheduleData[dateStr]).forEach(pair => {
-            if (Array.isArray(pair)) {
-              pair.forEach(pId => {
-                if (pId) dailyAssignedMap[pId] = (dailyAssignedMap[pId] || 0) + 1;
-              });
-            }
+            if (Array.isArray(pair)) pair.forEach(pId => { if (pId) dailyAssignedMap[pId] = (dailyAssignedMap[pId] || 0) + 1; });
           });
         }
 
-        let cardBgClass = "day-weekday";
-        if (holidayFlag) cardBgClass = "day-holiday";
-        else if (dayOfWeek === 2) cardBgClass = "day-tuesday";
-        else if (dayOfWeek === 6) cardBgClass = "day-saturday";
-        else if (dayOfWeek === 0) cardBgClass = "day-sunday";
+        let cardBgClass = 'day-weekday';
+        if (holidayFlag) cardBgClass = 'day-holiday';
+        else if (dayOfWeek === 6) cardBgClass = 'day-saturday';
+        else if (dayOfWeek === 0) cardBgClass = 'day-sunday';
 
         const card = document.createElement('div');
-        card.className = `day-card p-2.5 rounded-xl border flex flex-col justify-between space-y-2 ${cardBgClass}`;
-
+        card.className = `day-card border flex flex-col ${cardBgClass}`;
         let shiftsHTML = '';
 
         SHIFTS.forEach(shift => {
           const isShiftBlocked = shift.id === 'T1' && noAfternoon;
-
           if (isShiftBlocked) {
-            shiftsHTML += `
-              <div class="shift-card p-1.5 bg-slate-100/80 rounded-lg text-[10px] text-slate-400 border border-dashed border-slate-200 flex justify-between items-center">
-                <span>16:00 às 18:00 (Sem Escala)</span>
-                <i class="fa-solid fa-ban text-slate-300"></i>
-              </div>
-            `;
+            shiftsHTML += `<div class="shift-card p-1 bg-slate-100 rounded-lg text-[9px] text-slate-400 border border-dashed border-slate-200"><b>16h–18h</b><br>Sem programação</div>`;
             return;
           }
-
           totalSlots++;
           const assignedIds = scheduleData[dateStr] ? scheduleData[dateStr][shift.id] : null;
           const p1Id = assignedIds ? assignedIds[0] : '';
           const p2Id = assignedIds ? assignedIds[1] : '';
-
           if (p1Id && p2Id) assignedSlots++;
-
           const hasP1Duplicate = p1Id && dailyAssignedMap[p1Id] > 1;
           const hasP2Duplicate = p2Id && dailyAssignedMap[p2Id] > 1;
           const isDuplicateInSameShift = p1Id && p2Id && p1Id === p2Id;
           const hasDuplicateAlert = hasP1Duplicate || hasP2Duplicate || isDuplicateInSameShift;
-
-          let p1SelectOptions = `<option value="">-- Selecione --</option>`;
-          let p2SelectOptions = `<option value="">-- Selecione --</option>`;
-
-          people.forEach(p => {
-            p1SelectOptions += `<option value="${p.id}" ${p.id === p1Id ? 'selected' : ''}>${p.name}</option>`;
-            p2SelectOptions += `<option value="${p.id}" ${p.id === p2Id ? 'selected' : ''}>${p.name}</option>`;
-          });
-
-          shiftsHTML += `
-            <div class="shift-card p-2 rounded-lg shadow-xs border transition-all ${hasDuplicateAlert ? 'bg-rose-50 border-rose-400 ring-1 ring-rose-300' : 'bg-white/90 border-slate-200'} space-y-1">
-              <div class="flex justify-between items-center text-[10px] font-bold text-brand-800">
-                <span>${shift.name}</span>
-                <span class="text-[9px] bg-slate-100 px-1 py-0.5 rounded text-slate-500 font-medium">${shift.location}</span>
-              </div>
-
-              ${hasDuplicateAlert ? `
-                <div class="text-[9px] font-bold text-rose-600 flex items-center gap-1 animate-pulse">
-                  <i class="fa-solid fa-triangle-exclamation"></i> <span>Aviso: Repetido no dia!</span>
-                </div>
-              ` : ''}
-
-              <div class="grid grid-cols-2 gap-1 text-[11px]">
-                <select onchange="handleIndividualChange('${dateStr}', '${shift.id}', 0, this.value)" ${isAutoMode ? 'disabled' : ''} class="w-full ${hasP1Duplicate ? 'bg-rose-100 text-rose-900 border-rose-300 font-bold' : 'bg-slate-50 border-slate-200 text-slate-700'} border rounded px-1 py-0.5 text-[10px] focus:outline-none">
-                  ${p1SelectOptions}
-                </select>
-                <select onchange="handleIndividualChange('${dateStr}', '${shift.id}', 1, this.value)" ${isAutoMode ? 'disabled' : ''} class="w-full ${hasP2Duplicate ? 'bg-rose-100 text-rose-900 border-rose-300 font-bold' : 'bg-slate-50 border-slate-200 text-slate-700'} border rounded px-1 py-0.5 text-[10px] focus:outline-none">
-                  ${p2SelectOptions}
-                </select>
-              </div>
-            </div>
-          `;
+          const person1 = people.find(person => person.id === p1Id);
+          const person2 = people.find(person => person.id === p2Id);
+          const safeName1 = person1 ? String(person1.name).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])) : '';
+          const safeName2 = person2 ? String(person2.name).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])) : '';
+          let peopleHTML = '';
+          if (isAutoMode) {
+            peopleHTML = `<div class="grid grid-cols-1 gap-1"><span class="shift-person-name ${safeName1 ? '' : 'shift-person-empty'}">${safeName1 || 'DISPONÍVEL'}</span><span class="shift-person-name ${safeName2 ? '' : 'shift-person-empty'}">${safeName2 || 'DISPONÍVEL'}</span></div>`;
+          } else {
+            let p1SelectOptions = `<option value="">-- Selecione --</option>`;
+            let p2SelectOptions = `<option value="">-- Selecione --</option>`;
+            people.forEach(person => {
+              const safeName = String(person.name).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+              p1SelectOptions += `<option value="${person.id}" ${person.id === p1Id ? 'selected' : ''}>${safeName}</option>`;
+              p2SelectOptions += `<option value="${person.id}" ${person.id === p2Id ? 'selected' : ''}>${safeName}</option>`;
+            });
+            peopleHTML = `<div class="grid grid-cols-2 gap-1 text-[10px]"><select onchange="handleIndividualChange('${dateStr}', '${shift.id}', 0, this.value)" class="w-full bg-white border border-slate-200 rounded px-1 py-1 text-[9px]">${p1SelectOptions}</select><select onchange="handleIndividualChange('${dateStr}', '${shift.id}', 1, this.value)" class="w-full bg-white border border-slate-200 rounded px-1 py-1 text-[9px]">${p2SelectOptions}</select></div>`;
+          }
+          const shiftClass = shift.id === 'M1' ? 'shift-m1' : shift.id === 'M2' ? 'shift-m2' : 'shift-t1';
+          const timeLabel = shift.id === 'M1' ? '07h–09h' : shift.id === 'M2' ? '09h–11h' : '16h–18h';
+          shiftsHTML += `<div class="shift-card ${shiftClass} border ${hasDuplicateAlert ? 'border-rose-500 ring-1 ring-rose-300' : ''} space-y-1">
+            <div class="flex flex-col gap-0.5"><span class="text-[10px] font-extrabold text-slate-800">${timeLabel}</span><span class="text-[9px] font-bold text-slate-600">${shift.location}</span></div>
+            ${hasDuplicateAlert ? '<div class="text-[9px] font-bold text-rose-700">⚠ Repetido no dia</div>' : ''}
+            ${peopleHTML}
+          </div>`;
         });
 
-        card.innerHTML = `
-          <div class="flex justify-between items-center pb-1 border-b border-slate-200/60">
-            <span class="font-bold text-slate-800 text-xs">Dia ${d} <span class="text-[10px] font-normal text-slate-500">(${DAY_ABBR[dayOfWeek]})</span></span>
-            ${holidayFlag ? '<span class="text-[9px] font-extrabold bg-pink-500 text-white px-1.5 py-0.5 rounded shadow-xs">FERIADO</span>' : ''}
-          </div>
-          <div class="space-y-1.5 flex-1 flex flex-col justify-center">${shiftsHTML}</div>
-        `;
-
+        card.innerHTML = `<div class="flex justify-between items-center pb-1 border-b border-slate-200/70"><span class="font-extrabold text-slate-900 text-xs">DIA ${d}</span>${holidayFlag ? '<span class="text-[8px] font-extrabold bg-rose-600 text-white px-1.5 py-0.5 rounded">FERIADO</span>' : ''}</div><div class="space-y-1 flex-1">${shiftsHTML}</div>`;
         container.appendChild(card);
       }
 
+      const trailing = (7 - (container.children.length % 7)) % 7;
+      for (let blank = 0; blank < trailing; blank++) {
+        const empty = document.createElement('div');
+        empty.className = 'calendar-empty';
+        empty.setAttribute('aria-hidden', 'true');
+        container.appendChild(empty);
+      }
       const totalElem = document.getElementById('stat-total-slots');
       const assignedElem = document.getElementById('stat-assigned-slots');
       if (totalElem) totalElem.textContent = totalSlots;
